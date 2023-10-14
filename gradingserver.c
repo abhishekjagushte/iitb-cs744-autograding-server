@@ -38,11 +38,7 @@ void* compile_and_run(void* fd) {
     char diff_cmd[60];
 
 
-    printf("Server: waiting to receive file for fd = %d\n", clsockfd);
-
     int fbr = read(clsockfd, fbuff, 10000);
-
-    printf("Server: received file for fd = %d\n", clsockfd);
 
     sprintf(cppfname, "src%d.cpp", clsockfd);
     sprintf(errfname, "err%d.cpp", clsockfd);
@@ -118,8 +114,6 @@ int main(int argc, char* argv[]) {
 
     while(1) {
         int clsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &cl_arr_len);
-
-        printf("New connection!! fd = %d\n", clsockfd);
 
         if (clsockfd < 0) {
             printf("Error accepting\n");
