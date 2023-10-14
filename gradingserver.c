@@ -29,55 +29,57 @@ void send_msg_to_client(int clsockfd, char* msg) {
 
 void* compile_and_run(void* fd) {
     int clsockfd = (int) fd;
-    char fbuff[10000];
-    char cppfname[20];
-    char errfname[20];
-    char opfname[20];
-    char compile_cmd[60];
-    char run_cmd[60];
-    char diff_cmd[60];
+    while (1) {
+        char fbuff[10000];
+        char cppfname[20];
+        char errfname[20];
+        char opfname[20];
+        char compile_cmd[60];
+        char run_cmd[60];
+        char diff_cmd[60];
 
+        int fbr = read(clsockfd, fbuff, 10000);
 
-    printf("Server: waiting to receive file for fd = %d\n", clsockfd);
+        if (fbr <= 0) {
+            printf("Error in reading client request, ending the connection with fd = %d\n", clsockfd);
+            break;
+        }
 
-    int fbr = read(clsockfd, fbuff, 10000);
+        sprintf(cppfname, "src%d.cpp", clsockfd);
+        sprintf(errfname, "err%d.cpp", clsockfd);
+        sprintf(opfname, "op%d.cpp", clsockfd);
 
-    printf("Server: received file for fd = %d\n", clsockfd);
+        sprintf(compile_cmd, "g++ -o exe%d src%d.cpp 2> err%d.txt", clsockfd, clsockfd, clsockfd);
+        sprintf(run_cmd, "./exe%d 1> op%d.txt 2> err%d.txt", clsockfd, clsockfd, clsockfd);
+        sprintf(diff_cmd, "diff op%d.txt exp.txt", clsockfd);
 
-    sprintf(cppfname, "src%d.cpp", clsockfd);
-    sprintf(errfname, "err%d.cpp", clsockfd);
-    sprintf(opfname, "op%d.cpp", clsockfd);
-    
-    sprintf(compile_cmd, "g++ -o exe%d src%d.cpp 2> err%d.txt", clsockfd, clsockfd, clsockfd);
-    sprintf(run_cmd, "./exe%d 1> op%d.txt 2> err%d.txt", clsockfd, clsockfd, clsockfd);
-    sprintf(diff_cmd, "diff op%d.txt exp.txt", clsockfd);
+        // for (int i = 0; i < fbr; i++) {
+        //     printf("%c", fbuff[i]);
+        // }
 
-    // for (int i = 0; i < fbr; i++) {
-    //     printf("%c", fbuff[i]);
-    // }
+        int cppfd = creat(cppfname, 00700);
+        int fbw = write(cppfd, fbuff, fbr);
 
-    int cppfd = creat(cppfname, 00700);
-    int fbw = write(cppfd, fbuff, fbr);
-    
-    // compile the code
-    int status = system(compile_cmd);
-    
-    if (status != 0) {
-        send_msg_from_file_to_client(clsockfd, errfname);
-    } else {
-        // check runtime error
-        int r_status = system(run_cmd);
-        if (r_status != 0) {
+        // compile the code
+        int status = system(compile_cmd);
+
+        if (status != 0) {
             send_msg_from_file_to_client(clsockfd, errfname);
         } else {
-            // if no runtime error, the output is saved in op.txt
-            int st = system(diff_cmd);
-            if (st==0) {
-                send_msg_to_client(clsockfd, "Ran successfully!\n");
+            // check runtime error
+            int r_status = system(run_cmd);
+            if (r_status != 0) {
+                send_msg_from_file_to_client(clsockfd, errfname);
+            } else {
+                // if no runtime error, the output is saved in op.txt
+                int st = system(diff_cmd);
+                if (st==0) {
+                    send_msg_to_client(clsockfd, "Ran successfully!\n");
+                }
             }
         }
+        close(cppfd);
     }
-    close(cppfd);
     close(clsockfd);
 }
 
@@ -118,8 +120,6 @@ int main(int argc, char* argv[]) {
 
     while(1) {
         int clsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &cl_arr_len);
-
-        printf("New connection!! fd = %d\n", clsockfd);
 
         if (clsockfd < 0) {
             printf("Error accepting\n");

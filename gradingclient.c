@@ -49,21 +49,19 @@ int main(int argc, char *argv[]) {
     struct timeval total_time_start;
     gettimeofday(&total_time_start, NULL);
 
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
-    while (count--) {
-        sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        printf("Error in creating a socket\n");
+        exit(1);
+    }
 
-        if (sockfd < 0) {
-            printf("Error in creating a socket\n");
-            exit(1);
-        }
+    if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+        printf("Couldn't connect!");
+        exit(1);
+    }
 
-        if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-            printf("Couldn't connect!");
-            exit(1);
-        }
-
-        
+    while (count--) {        
         // start time
         struct timeval start_time;
         gettimeofday(&start_time, NULL);
@@ -75,9 +73,7 @@ int main(int argc, char *argv[]) {
         } else {
             succ++;
             char res[1000];
-            printf("Waiting for response id = %d\n", prog_id);
             int resbytes = read(sockfd, &res, 1000);
-            printf("Got response id = %d\n", prog_id);
             
             // end time
             struct timeval end_time;
@@ -88,7 +84,6 @@ int main(int argc, char *argv[]) {
             int t_diff = (end_time.tv_sec*1000 + end_time.tv_usec/1000) - (start_time.tv_sec*1000 + start_time.tv_usec/1000);
             time_sum += t_diff;
         }
-        close(sockfd);
         sleep(sleep_time);
     }
 
@@ -99,5 +94,6 @@ int main(int argc, char *argv[]) {
     float average = (float) time_sum/icount;
     printf("Successful %d/%d. Average time taken in prog %d = %f with %d loop iterations. Total time taken for loop = %d ms. Throughput = %f\n", succ, icount, prog_id, average, icount, t_diff, (float) (succ*1000)/t_diff);
 
+    close(sockfd);
     close(fd);
 }

@@ -11,10 +11,6 @@ SIZE='
 120
 '
 
-# Create and clear the file to store the results of the analysis
-touch results.txt
-> results.txt
-
 cat /dev/null > throughput.txt
 cat /dev/null > aat.txt
 
