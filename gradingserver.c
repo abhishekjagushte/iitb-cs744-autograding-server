@@ -53,10 +53,6 @@ void* compile_and_run(void* fd) {
         sprintf(run_cmd, "./exe%d 1> op%d.txt 2> err%d.txt", clsockfd, clsockfd, clsockfd);
         sprintf(diff_cmd, "diff op%d.txt exp.txt", clsockfd);
 
-        // for (int i = 0; i < fbr; i++) {
-        //     printf("%c", fbuff[i]);
-        // }
-
         int cppfd = creat(cppfname, 00700);
         int fbw = write(cppfd, fbuff, fbr);
 
