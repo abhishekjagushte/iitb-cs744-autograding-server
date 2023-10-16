@@ -53,7 +53,7 @@ void send_files_to_server(
             struct timeval end_time;
             gettimeofday(&end_time, NULL);
 
-            int t_diff = (end_time.tv_sec*1000000 + end_time.tv_usec) - (start_time.tv_sec*1000000 + start_time.tv_usec);
+            int t_diff = (end_time.tv_sec*1000 + end_time.tv_usec/1000) - (start_time.tv_sec*1000 + start_time.tv_usec/1000);
             time_sum += t_diff;
         }
         sleep(sleep_time);
