@@ -20,24 +20,23 @@ cat /dev/null > throughput.txt
 cat /dev/null > aat.txt
 
 # kill any ongoing vmstat
+pkill -f 'vmstat 1'
+wait $! 2>/dev/null
 
 # Run the analysis for different sizes of threads
 for i in ${SIZE}; do
     echo Testing for $i clients
 
-#    ps -eLf | grep vmstat | head -n -1 | awk '{print $2}' | xargs kill
-    pkill -f 'vmstat 1'
-
+    # ps -eLf | grep vmstat | head -n -1 | awk '{print $2}' | xargs kill
     vmstat 1 > pref$i.txt &
 
     bash loadtest.sh ${i} $1 $2 $3  | tee >(awk -v cl=$i '{printf("%f %f\n", cl, $9)}' >> throughput.txt) >(awk -v cl=$i '{printf("%f %f\n", cl, $5)}' >> aat.txt)
 
     pid=$(ps -eLf | grep vmstat | grep -v grep |  awk '{printf($2)}')
-    kill -9 $pid
+    pkill -f 'vmstat 1'
     wait $! 2>/dev/null
     
     sed -n /^[0-9]/p pref$i.txt | awk '{print $15}' > uti$i.txt
-  
 done
 
 # Plot the throughput results
