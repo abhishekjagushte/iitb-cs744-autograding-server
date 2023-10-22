@@ -22,6 +22,10 @@ cat /dev/null > throughput.txt
 cat /dev/null > aat.txt
 cat /dev/null > threadsplot.txt
 cat /dev/null > results.txt
+cat /dev/null > error_rate.txt
+cat /dev/null > timeout_rate.txt
+cat /dev/null > succ_rate.txt
+cat /dev/null > req_rate.txt
 
 
 # kill any ongoing vmstat
@@ -39,8 +43,10 @@ for i in ${SIZE}; do
     bash loadtest.sh ${i} $1 $2 $3
     cat results.txt | tee >(awk -v cl=$i '{printf("%f %f\n", cl, $9)}' >> throughput.txt) >(awk -v cl=$i '{printf("%f %f\n", cl, $5)}' >> aat.txt)
 
-    cat results.txt | awk '{printf("%d %d\n", $21, 100 - ($24/$15)*100)}' >> error_rate.txt
-
+    cat results.txt | awk '{printf("%d %d\n", $21, $24)}' >> timeout_rate.txt
+    cat results.txt | awk '{printf("%d %d\n", $21, $27)}' >> error_rate.txt
+    cat results.txt | awk '{printf("%d %d\n", $21, $9)}' >> succ_rate.txt
+    cat results.txt | awk '{printf("%d %d\n", $21, $24 + $27 + $9)}' >> req_rate.txt
 
     pkill -f './moniter_threads.sh'
     pkill -f 'vmstat 1'
@@ -59,7 +65,6 @@ done
 # Plot the throughput results
 cat throughput.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Throughput" -X "Number of Clients" -Y "Throughput" -r 0.25> ./throughput.png
 
-
 # Plot the average access time results
 cat aat.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Average response time" -X "Number of Clients" -Y "Average response time" -r 0.25> ./aat.png
 
@@ -68,6 +73,15 @@ cat threadsplot.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs
 
 # Plot the error rate results
 cat error_rate.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Error Rate" -X "Number of Clients" -Y "Error Rate" -r 0.25> ./error_rate.png
+
+# Plot the error rate results
+cat timeout_rate.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Timeout Rate" -X "Number of Clients" -Y "Timeout Rate" -r 0.25> ./timeout_rate.png
+
+# Plot the error rate results
+cat succ_rate.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Success Rate" -X "Number of Clients" -Y "Goodput" -r 0.25> ./succ_rate.png
+
+# Plot the Request rate results
+cat req_rate.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Request Rate" -X "Number of Clients" -Y "Request Rate" -r 0.25> ./req_rate.png
 
 
 sleep 5

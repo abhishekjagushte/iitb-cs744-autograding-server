@@ -22,6 +22,7 @@ grep "Average" outputs/*.txt | awk  -v nclients="$1" '
         thru=0
         succ=0
         timeouts=0
+        errors=0
     }
     
     {
@@ -29,11 +30,12 @@ grep "Average" outputs/*.txt | awk  -v nclients="$1" '
         total=total+$14
         thru=thru+$27
         succ=succ+$2
-        timeouts=timeouts+$31
+        timeouts=timeouts+$32
+        errors=errors+$37
     }
 
     END{
-        printf("Average time taken = %f ms. Throughput = %f and Successful = %d of %d | Number of clients = %d Timeouts = %d\n", sum/total, thru, succ, total, nclients, timeouts)
+        printf("Average time taken = %f ms. Throughput = %f and Successful = %d of %d | Number of clients = %d Timeout-rate = %d Error-rate = %d\n", sum/total, thru, succ, total, nclients, timeouts, errors)
     }
 ' >> results.txt
 

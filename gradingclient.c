@@ -79,7 +79,9 @@ void send_files_to_server(
             time_sum += t_diff;
 
             if (resbytes <= 0) {
-                if (errno == EWOULDBLOCK || errno == EAGAIN) {
+                int recverr = errno;
+                printf("errno = %d EWOULDBLOCK = %d EAGAIN = %d timeouts = %d\n", recverr, EWOULDBLOCK, EAGAIN, timeouts);
+                if (recverr == EWOULDBLOCK || recverr == EAGAIN) {
                     timeouts++;
                 } else {
                     errors++;
@@ -99,7 +101,7 @@ void send_files_to_server(
     int t_diff = (total_time_end.tv_sec*1000 + total_time_end.tv_usec/1000) - (total_time_start.tv_sec*1000 + total_time_start.tv_usec/1000);
 
     float average = (float) time_sum/icount;
-    printf("Successful %d of %d. Average time taken in prog %d = %f with %d loop iterations. Total time taken for loop = %d ms. Throughput = %f No. of timeouts = %d No. of errors = %d\n", succ, icount, prog_id, average, icount, t_diff, (float) (succ*1000)/t_diff, errors, errors);
+    printf("Successful %d of %d. Average time taken in prog %d = %f with %d loop iterations. Total time taken for loop = %d ms. Throughput = %f Rate of timeouts = %f Rate of errors = %f\n", succ, icount, prog_id, average, icount, t_diff, (float) (succ*1000)/t_diff, (float) (timeouts*1000)/t_diff, (float) (errors*1000)/t_diff);
 
 }
 
