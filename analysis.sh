@@ -29,6 +29,8 @@ pkill -f 'vmstat 1'
 pkill -f './moniter_threads.sh'
 wait $! 2>/dev/null
 
+>loadUti.txt
+
 # Run the analysis for different sizes of threads
 for i in ${SIZE}; do
     echo Testing for $i clients
@@ -50,7 +52,10 @@ for i in ${SIZE}; do
     echo $i $avg_threads >> threadsplot.txt
 
     sed -n /^[0-9]/p pref$i.txt | awk '{print $15}' > uti$i.txt
-    bash avg_uti.sh $i
+    
+    echo -n "${i} " >> loadUti.txt
+    bash avg_uti.sh $i | grep -o "[0-9]*\.[0-9]*" >> loadUti.txt
+    
     cat /dev/null > results.txt
 done
 
@@ -66,8 +71,9 @@ cat aat.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Average
 cat threadsplot.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Average active threads" -X "Number of Clients" -Y "Average active threads" -r 0.25> ./threads.png
 
 # Plot the error rate results
-cat error_rate.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Error Rate" -X "Number of Clients" -Y "Error Rate" -r 0.25> ./error_rate.png
+#cat error_rate.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Error Rate" -X "Number of Clients" -Y "Error Rate" -r 0.25> ./error_rate.png
 
+cat loadUti.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs CPU Utilisation" -X "Number of Clients" -Y "CPU Utilisation" -r 0.25> ./loadUti.png
 
 sleep 5
 
