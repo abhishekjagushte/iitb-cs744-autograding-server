@@ -1,6 +1,6 @@
 rm -f op*
 rm -f exe*
-rm -f err*
+rm -f err[0-9]*.txt
 rm -f src*
 rm -f outputs/*
 rm -f uti*.txt

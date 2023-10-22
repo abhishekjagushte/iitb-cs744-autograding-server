@@ -5,6 +5,7 @@
 #include<fcntl.h>
 #include <netdb.h>
 #include <sys/time.h>
+#include <errno.h>
 
 
 void error(char* message) {
@@ -46,6 +47,8 @@ void send_files_to_server(
     int succ = 0;
     int time_sum = 0;
     int sockfd;
+    int timeouts = 0;
+    int errors = 0;
 
 
     // total time taken for loop
@@ -75,11 +78,15 @@ void send_files_to_server(
             int t_diff = (end_time.tv_sec*1000 + end_time.tv_usec/1000) - (start_time.tv_sec*1000 + start_time.tv_usec/1000);
             time_sum += t_diff;
 
-
             if (resbytes <= 0) {
-                printf("Error receiving response from server\n");
+                if (errno == EWOULDBLOCK || errno == EAGAIN) {
+                    timeouts++;
+                } else {
+                    errors++;
+                }
                 continue;
             }
+
             succ++;
             write(STDOUT_FILENO, res, resbytes);
         }
@@ -92,7 +99,7 @@ void send_files_to_server(
     int t_diff = (total_time_end.tv_sec*1000 + total_time_end.tv_usec/1000) - (total_time_start.tv_sec*1000 + total_time_start.tv_usec/1000);
 
     float average = (float) time_sum/icount;
-    printf("Successful %d of %d. Average time taken in prog %d = %f with %d loop iterations. Total time taken for loop = %d ms. Throughput = %f\n", succ, icount, prog_id, average, icount, t_diff, (float) (succ*1000)/t_diff);
+    printf("Successful %d of %d. Average time taken in prog %d = %f with %d loop iterations. Total time taken for loop = %d ms. Throughput = %f No. of timeouts = %d No. of errors = %d\n", succ, icount, prog_id, average, icount, t_diff, (float) (succ*1000)/t_diff, errors, errors);
 
 }
 
