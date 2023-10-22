@@ -65,7 +65,7 @@ done
 # Plot the throughput results
 cat throughput.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Throughput" -X "Number of Clients" -Y "Throughput" -r 0.25> ./throughput.png
 
-# Plot the average access time results
+# Plot the average request time results
 cat aat.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Average response time" -X "Number of Clients" -Y "Average response time" -r 0.25> ./aat.png
 
 # Plot the average active threads results
@@ -74,10 +74,10 @@ cat threadsplot.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs
 # Plot the error rate results
 cat error_rate.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Error Rate" -X "Number of Clients" -Y "Error Rate" -r 0.25> ./error_rate.png
 
-# Plot the error rate results
+# Plot the timeout rate results
 cat timeout_rate.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Timeout Rate" -X "Number of Clients" -Y "Timeout Rate" -r 0.25> ./timeout_rate.png
 
-# Plot the error rate results
+# Plot the goodput results
 cat succ_rate.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Success Rate" -X "Number of Clients" -Y "Goodput" -r 0.25> ./succ_rate.png
 
 # Plot the Request rate results
