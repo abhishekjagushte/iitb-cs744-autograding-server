@@ -19,6 +19,7 @@ if [ $# -ne 3 ]; then
     exit
 fi
 
+
 cat /dev/null > throughput.txt
 cat /dev/null > aat.txt
 cat /dev/null > threadsplot.txt
@@ -27,14 +28,13 @@ cat /dev/null > error_rate.txt
 cat /dev/null > timeout_rate.txt
 cat /dev/null > succ_rate.txt
 cat /dev/null > req_rate.txt
+cat /dev/null > loadUti.txt
 
 
 # kill any ongoing vmstat
 pkill -f 'vmstat 1'
 pkill -f './moniter_threads.sh'
 wait $! 2>/dev/null
-
-> loadUti.txt
 
 # Run the analysis for different sizes of threads
 for i in ${SIZE}; do
