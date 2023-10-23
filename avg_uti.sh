@@ -1,5 +1,5 @@
 nclient=$1
-cat pref$nclient.txt | awk -v load="$nclient" '
+cat ./plots/pref$nclient.txt | awk -v load="$nclient" '
 	BEGIN{
 		total=0
 		sum=0

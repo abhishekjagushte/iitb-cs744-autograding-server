@@ -31,9 +31,10 @@ void* compile_and_run(void* fd) {
     int clsockfd = (int) fd;
     while (1) {
         char fbuff[10000];
-        char cppfname[20];
-        char errfname[20];
-        char opfname[20];
+        char cppfname[30];
+        char errfname[30];
+        char opfname[30];
+        char exefname[30];
         char compile_cmd[60];
         char run_cmd[60];
         char diff_cmd[60];
@@ -45,13 +46,14 @@ void* compile_and_run(void* fd) {
             break;
         }
 
-        sprintf(cppfname, "src%d.cpp", clsockfd);
-        sprintf(errfname, "err%d.cpp", clsockfd);
-        sprintf(opfname, "op%d.cpp", clsockfd);
+        sprintf(cppfname, "./grader/src%d.cpp", clsockfd);
+        sprintf(errfname, "./grader/err%d.txt", clsockfd);
+        sprintf(opfname, "./grader/op%d.txt", clsockfd);
+        sprintf(exefname, "./grader/exe%d", clsockfd);
 
-        sprintf(compile_cmd, "g++ -o exe%d src%d.cpp 2> err%d.txt", clsockfd, clsockfd, clsockfd);
-        sprintf(run_cmd, "./exe%d 1> op%d.txt 2> err%d.txt", clsockfd, clsockfd, clsockfd);
-        sprintf(diff_cmd, "diff op%d.txt exp.txt", clsockfd);
+        sprintf(compile_cmd, "g++ -o %s %s 2> %s", exefname, cppfname, errfname);
+        sprintf(run_cmd, "./%s 1> %s 2> %s", exefname, opfname, errfile);
+        sprintf(diff_cmd, "diff %s exp.txt", opfname);
 
         int cppfd = creat(cppfname, 00700);
         int fbw = write(cppfd, fbuff, fbr);
