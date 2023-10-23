@@ -1,5 +1,6 @@
 #!/bin/bash
 echo Analysing and Generating PNG!!
+echo
 
 chmod +x moniter_threads.sh
 
@@ -33,6 +34,8 @@ pkill -f 'vmstat 1'
 pkill -f './moniter_threads.sh'
 wait $! 2>/dev/null
 
+> loadUti.txt
+
 # Run the analysis for different sizes of threads
 for i in ${SIZE}; do
     echo Testing for $i clients
@@ -57,8 +60,13 @@ for i in ${SIZE}; do
     echo $i $avg_threads >> threadsplot.txt
 
     sed -n /^[0-9]/p pref$i.txt | awk '{print $15}' > uti$i.txt
-    bash avg_uti.sh $i
+    
+    echo -n "${i} " >> loadUti.txt
+    bash avg_uti.sh $i | grep -o "[0-9]*\.[0-9]*" >> loadUti.txt
+    
     cat /dev/null > results.txt
+
+    echo
 done
 
 
@@ -83,6 +91,8 @@ cat succ_rate.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs S
 # Plot the Request rate results
 cat req_rate.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs Request Rate" -X "Number of Clients" -Y "Request Rate" -r 0.25> ./req_rate.png
 
+# Plot the CPU Utilisation results
+cat loadUti.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs CPU Utilisation" -X "Number of Clients" -Y "CPU Utilisation" -r 0.25> ./cpu_uti.png
 
 sleep 5
 
