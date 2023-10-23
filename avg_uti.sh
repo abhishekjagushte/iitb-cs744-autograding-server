@@ -1,15 +1,17 @@
 nclient=$1
-wcL=$(cat uti$nclient.txt | wc -l)
-
-cat  uti$nclient.txt | awk -v wcL="$wcL" -v load="$nclient" '
+cat pref$nclient.txt | awk -v load="$nclient" '
 	BEGIN{
+		total=0
 		sum=0
 	}
 	    
 	{
-		sum=sum+$1
+		if ($15 ~ /^[0-9]+$/) {
+			sum=sum+$15
+			total=total+1
+		}
 	}
 
 	END{
-		printf("Average Utilization for (load level = %d) = %f\n", load, 100-(sum/wcL))
+		printf("Average Utilization for (load level = %d) = %f\n", load, 100-(sum/total))
 	}'

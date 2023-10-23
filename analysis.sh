@@ -59,10 +59,8 @@ for i in ${SIZE}; do
     avg_threads=$(cat threads.txt)
     echo $i $avg_threads >> threadsplot.txt
 
-    sed -n /^[0-9]/p pref$i.txt | awk '{print $15}' > uti$i.txt
-    
-    echo -n "${i} " >> loadUti.txt
-    bash avg_uti.sh $i | grep -o "[0-9]*\.[0-9]*" >> loadUti.txt
+    avg_uti=$(bash avg_uti.sh $i | grep -o "[0-9]*\.[0-9]*")
+    echo $i $avg_uti >> loadUti.txt
     
     cat /dev/null > results.txt
 
