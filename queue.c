@@ -62,8 +62,7 @@ void print_queue(Queue* q) {
     }
 }
 
-_Bool isEmpty(Queue* q) {
+_Bool is_empty(Queue* q) {
     return q->front == NULL;
 }
-
 
