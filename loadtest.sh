@@ -3,8 +3,6 @@ if [ $# -ne 4 ]; then
     exit
 fi
 
-plots_path=./plots
-
 gcc -o client gradingclient.c
 mkdir -p outputs
 rm -f outputs/*
@@ -39,6 +37,6 @@ grep "Average" outputs/*.txt | awk  -v nclients="$1" '
     END{
         printf("Average time taken = %f ms. Throughput = %f and Successful = %d of %d | Number of clients = %d Timeout-rate = %d Error-rate = %d\n", sum/total, thru, succ, total, nclients, timeouts, errors)
     }
-' >> $plots_path/results.txt
+' >> results.txt
 
 
