@@ -6,7 +6,16 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
+#include "queue.h"
+
 char *errfile = "err.txt";
+
+Queue *cliQueue;
+
+pthread_mutex_t qmutex = PTHREAD_MUTEX_INITIALIZER;
+
+pthread_cond_t qempty = PTHREAD_COND_INITIALIZER;
+
 
 void send_msg_from_file_to_client(int clsockfd, char* outfilename) {
     // compile error file descriptor
@@ -27,17 +36,28 @@ void send_msg_to_client(int clsockfd, char* msg) {
     write(clsockfd, msg, strlen(msg));
 }
 
-void* compile_and_run(void* fd) {
-    int clsockfd = (int) fd;
+void* compile_and_run() {
+while(1){
+    pthread_mutex_lock(&qmutex);
+    
+    if(is_empty(cliQueue))
+    	pthread_cond_wait(&qempty, &qmutex);
+      
+    int clsockfd = dequeue(cliQueue);
+        
+    pthread_mutex_unlock(&qmutex);
+    
     while (1) {
         char fbuff[10000];
-        char cppfname[30];
-        char errfname[30];
-        char opfname[30];
-        char exefname[30];
+        char cppfname[20];
+        char errfname[20];
+        char opfname[20];
         char compile_cmd[60];
         char run_cmd[60];
         char diff_cmd[60];
+
+        int queueSize = 0;
+        int sumQueueSize = 0;
 
         int fbr = read(clsockfd, fbuff, 10000);
 
@@ -46,14 +66,13 @@ void* compile_and_run(void* fd) {
             break;
         }
 
-        sprintf(cppfname, "./grader/src%d.cpp", clsockfd);
-        sprintf(errfname, "./grader/err%d.txt", clsockfd);
-        sprintf(opfname, "./grader/op%d.txt", clsockfd);
-        sprintf(exefname, "./grader/exe%d", clsockfd);
+        sprintf(cppfname, "src%d.cpp", clsockfd);
+        sprintf(errfname, "err%d.cpp", clsockfd);
+        sprintf(opfname, "op%d.cpp", clsockfd);
 
-        sprintf(compile_cmd, "g++ -o %s %s 2> %s", exefname, cppfname, errfname);
-        sprintf(run_cmd, "./%s 1> %s 2> %s", exefname, opfname, errfile);
-        sprintf(diff_cmd, "diff %s exp.txt", opfname);
+        sprintf(compile_cmd, "g++ -o exe%d src%d.cpp 2> err%d.txt", clsockfd, clsockfd, clsockfd);
+        sprintf(run_cmd, "./exe%d 1> op%d.txt 2> err%d.txt", clsockfd, clsockfd, clsockfd);
+        sprintf(diff_cmd, "diff op%d.txt exp.txt", clsockfd);
 
         int cppfd = creat(cppfname, 00700);
         int fbw = write(cppfd, fbuff, fbr);
@@ -79,17 +98,23 @@ void* compile_and_run(void* fd) {
         close(cppfd);
     }
     close(clsockfd);
+}          
 }
 
 int main(int argc, char* argv[]) {
     int sockfd, portno;
+    int thread_pool_size;
+    int active_threads = 0;
 
-    if (argc != 2) {
+    cliQueue = createQueue();
+
+    if (argc != 3) {
         printf("Usage: <port-no>\n");
         exit(0);
     }   
 
     portno = atoi(argv[1]);
+    thread_pool_size = atoi(argv[2]);
 
     socklen_t cl_arr_len;
 
@@ -115,6 +140,12 @@ int main(int argc, char* argv[]) {
     listen(sockfd, 2);
  
     cl_arr_len = sizeof(cli_addr);
+    
+    pthread_t thread[thread_pool_size];
+    for(int i=0; i<thread_pool_size; i++)
+        if (pthread_create(&thread, NULL, compile_and_run, NULL) != 0)
+            printf("Failed to create Thread\n");
+    
 
     while(1) {
         int clsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &cl_arr_len);
@@ -122,8 +153,13 @@ int main(int argc, char* argv[]) {
         if (clsockfd < 0) {
             printf("Error accepting\n");
         }
-        pthread_t thread;
-        if (pthread_create(&thread, NULL, compile_and_run, (void *) clsockfd) != 0)
-            printf("Failed to create Thread\n");
+        
+        pthread_mutex_lock(&qmutex); 
+               
+        enqueue(cliQueue, clsockfd); 
+        pthread_cond_signal(&qempty);
+        
+        pthread_mutex_unlock(&qmutex);
+        
     }
 }
