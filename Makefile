@@ -1,10 +1,10 @@
-all: test
+all: server
 
-OBJS = queue.o test.o
-PROGS = queue.c test.c
+OBJS = queue.o gradingserver.o
+PROGS = queue.c gradingserver.c
 
-test: compile
-	gcc -o test $(OBJS)
+server: compile
+	gcc -o server $(OBJS)
 
 compile:
 	gcc -c $(PROGS)
