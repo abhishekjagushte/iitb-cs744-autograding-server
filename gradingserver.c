@@ -8,8 +8,6 @@
 
 #include "queue.h"
 
-char *errfile = "err.txt";
-
 Queue *cliQueue;
 
 pthread_mutex_t qmutex = PTHREAD_MUTEX_INITIALIZER;
@@ -37,24 +35,24 @@ void send_msg_to_client(int clsockfd, char* msg) {
 }
 
 void* compile_and_run() {
-while(1){
-    pthread_mutex_lock(&qmutex);
-    
-    if(is_empty(cliQueue))
-    	pthread_cond_wait(&qempty, &qmutex);
-      
-    int clsockfd = dequeue(cliQueue);
+    char fbuff[10000];
+    char cppfname[30];
+    char errfname[30];
+    char opfname[30];
+    char exefname[30];
+    char compile_cmd[100];
+    char run_cmd[100];
+    char diff_cmd[100];
+
+    while(1){
+        pthread_mutex_lock(&qmutex);
         
-    pthread_mutex_unlock(&qmutex);
-    
-    while (1) {
-        char fbuff[10000];
-        char cppfname[20];
-        char errfname[20];
-        char opfname[20];
-        char compile_cmd[60];
-        char run_cmd[60];
-        char diff_cmd[60];
+        if(is_empty(cliQueue))
+            pthread_cond_wait(&qempty, &qmutex);
+        
+        int clsockfd = dequeue(cliQueue);
+            
+        pthread_mutex_unlock(&qmutex);
 
         int queueSize = 0;
         int sumQueueSize = 0;
@@ -66,13 +64,14 @@ while(1){
             break;
         }
 
-        sprintf(cppfname, "src%d.cpp", clsockfd);
-        sprintf(errfname, "err%d.cpp", clsockfd);
-        sprintf(opfname, "op%d.cpp", clsockfd);
+        sprintf(cppfname, "./grader/src%d.cpp", clsockfd);
+        sprintf(errfname, "./grader/err%d.txt", clsockfd);
+        sprintf(opfname, "./grader/op%d.txt", clsockfd);
+        sprintf(exefname, "./grader/exe%d", clsockfd);
 
-        sprintf(compile_cmd, "g++ -o exe%d src%d.cpp 2> err%d.txt", clsockfd, clsockfd, clsockfd);
-        sprintf(run_cmd, "./exe%d 1> op%d.txt 2> err%d.txt", clsockfd, clsockfd, clsockfd);
-        sprintf(diff_cmd, "diff op%d.txt exp.txt", clsockfd);
+        sprintf(compile_cmd, "g++ -o %s %s 2> %s", exefname, cppfname, errfname);
+        sprintf(run_cmd, "./%s 1> %s 2> %s", exefname, opfname, errfname);
+        sprintf(diff_cmd, "diff %s exp.txt", opfname);
 
         int cppfd = creat(cppfname, 00700);
         int fbw = write(cppfd, fbuff, fbr);
@@ -96,9 +95,8 @@ while(1){
             }
         }
         close(cppfd);
-    }
-    close(clsockfd);
-}          
+        close(clsockfd);
+    }          
 }
 
 int main(int argc, char* argv[]) {
@@ -109,7 +107,7 @@ int main(int argc, char* argv[]) {
     cliQueue = createQueue();
 
     if (argc != 3) {
-        printf("Usage: <port-no>\n");
+        printf("Usage: <port-no> <thread pool size>\n");
         exit(0);
     }   
 
@@ -152,6 +150,7 @@ int main(int argc, char* argv[]) {
 
         if (clsockfd < 0) {
             printf("Error accepting\n");
+            continue;
         }
         
         pthread_mutex_lock(&qmutex); 

@@ -1,9 +1,6 @@
 op*
 exe*
 outputs/*
-err*
-aat*
-throughput*
 client
 server
 threads.txt
