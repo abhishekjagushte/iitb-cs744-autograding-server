@@ -10,8 +10,8 @@
 #include <errno.h>
 #include <pthread.h>
 
-const int BUFFER_SIZE = 1024;
-const int FILE_SIZE_BUFFER_SIZE = 4;
+#include "fileshare.h"
+
 struct submit_args {
     int sockfd;
     char* fname;
@@ -39,41 +39,6 @@ int create_socket_connection(struct sockaddr_in serv_addr, int timeout) {
     }
 
     return sockfd;
-}
-
-int send_file(int sockfd, char* fname) {
-    char buff[BUFFER_SIZE];
-
-    FILE* file = fopen(fname, "r+");
-    if (!file) {
-        error("Couldn't open file");
-        return -1;
-    }
-
-    fseek(file, 0L, SEEK_END);
-    int file_size = ftell(file);
-    fseek(file, 0L, SEEK_SET);
-
-    char file_size_bytes[FILE_SIZE_BUFFER_SIZE];
-    memcpy(file_size_bytes, &file_size, sizeof(file_size));
-
-    if (send(sockfd, (char*) &file_size_bytes, sizeof(file_size), 0) == -1) {
-        error("Error in sending file size");
-    }
-
-    while(!feof(file)) {
-        size_t fbr = fread(buff, 1, sizeof(buff), file);
-
-        if (send(sockfd, buff, fbr, 0) == -1) {
-            error("Error in sending file to server");
-            fclose(file);
-            return -1;
-        }
-
-        bzero(buff, BUFFER_SIZE);
-    }
-    fclose(file);
-    return 0;
 }
 
 void* submit(void* args) {

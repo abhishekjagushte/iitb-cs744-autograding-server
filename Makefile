@@ -1,14 +1,29 @@
-all: server
+all: server client
 
-OBJS = queue.o gradingserver.o
-PROGS = queue.c gradingserver.c
+CC = gcc
+CC_FLAGS = -Wno-implicit-function-declaration
 
-server: compile
-	gcc -o server $(OBJS)
+PROGS_SERVER = queue.c fileshare.c gradingserver.c
+OBJS_SERVER = queue.o fileshare.o gradingserver.o
 
-compile:
-	gcc -c $(PROGS)
+PROGS_CLIENT = fileshare.c gradingclient.c
+OBJS_CLIENT = fileshare.o gradingclient.o
+
+OBJS_FINAL = client server
+
+
+server: compile_server
+	$(CC) $(CC_FLAGS) -o server $(OBJS_SERVER)
+
+client: compile_client
+	$(CC) $(CC_FLAGS) -o client $(OBJS_CLIENT)
+
+compile_server:
+	$(CC) $(CC_FLAGS) -c $(PROGS_SERVER)
+	
+compile_client:
+	$(CC) $(CC_FLAGS) -c $(PROGS_CLIENT)
 
 clean:
-	rm -f $(OBJS)
+	rm -f $(OBJS_SERVER) $(OBJS_CLIENT) $(OBJS_FINAL)
 

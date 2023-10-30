@@ -5,7 +5,6 @@ fi
 
 plots_path=./plots
 
-gcc -o client gradingclient.c -Wno-implicit-function-declaration
 mkdir -p outputs
 rm -f outputs/*
 

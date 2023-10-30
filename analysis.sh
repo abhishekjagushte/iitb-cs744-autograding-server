@@ -41,6 +41,8 @@ pkill -f 'vmstat 1'
 pkill -f './moniter_threads.sh'
 wait $! 2>/dev/null
 
+make client --silent
+
 # Run the analysis for different sizes of threads
 for i in ${SIZE}; do
     echo Testing for $i clients
