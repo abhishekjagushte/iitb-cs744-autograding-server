@@ -4,3 +4,4 @@ outputs/*
 client
 server
 threads.txt
+*.o

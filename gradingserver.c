@@ -8,6 +8,9 @@
 
 #include "queue.h"
 
+const int BUFFER_SIZE = 1024;
+const int FILE_SIZE_BUFFER_SIZE = 4;
+
 Queue *cliQueue;
 
 pthread_mutex_t qmutex = PTHREAD_MUTEX_INITIALIZER;
@@ -34,8 +37,48 @@ void send_msg_to_client(int clsockfd, char* msg) {
     write(clsockfd, msg, strlen(msg));
 }
 
+int receivefile(int clsockfd, char* cppfname) {
+    char buff[BUFFER_SIZE];
+    int file_size = 0;
+    char file_size_bytes[4];
+
+    // receive the file size
+    if (recv(clsockfd, &file_size_bytes, sizeof(file_size), 0) == -1) {
+        printf("Error in receving file size");
+        return -1;
+    }
+    memcpy(&file_size, file_size_bytes, sizeof(file_size));
+
+    FILE *file = fopen(cppfname, "wb");
+    if (!file) {
+        printf("Error in creating cpp file\n");
+        return -1;
+    }
+
+    int total_bytes_recv = 0;
+    while(1) {
+        size_t fbr = recv(clsockfd, buff, BUFFER_SIZE, 0);
+        total_bytes_recv += fbr;
+        if (fbr == 0) {
+            // file receiving is complete
+
+            break;
+        } else if (fbr < 0) {
+            printf("Error in receiving file\n");
+            fclose(file);
+            break;
+        }
+        fwrite(buff, 1, fbr, file);
+        bzero(buff, BUFFER_SIZE);
+        if (total_bytes_recv >= file_size)
+            break;
+    }
+    fclose(file);
+
+    return 0;
+}
+
 void* compile_and_run() {
-    char fbuff[10000];
     char cppfname[30];
     char errfname[30];
     char opfname[30];
@@ -44,7 +87,7 @@ void* compile_and_run() {
     char run_cmd[100];
     char diff_cmd[100];
 
-    while(1){
+    while(1){        
         pthread_mutex_lock(&qmutex);
         
         if(is_empty(cliQueue))
@@ -53,16 +96,6 @@ void* compile_and_run() {
         int clsockfd = dequeue(cliQueue);
             
         pthread_mutex_unlock(&qmutex);
-
-        int queueSize = 0;
-        int sumQueueSize = 0;
-
-        int fbr = read(clsockfd, fbuff, 10000);
-
-        if (fbr <= 0) {
-            printf("Error in reading client request, ending the connection with fd = %d\n", clsockfd);
-            break;
-        }
 
         sprintf(cppfname, "./grader/src%d.cpp", clsockfd);
         sprintf(errfname, "./grader/err%d.txt", clsockfd);
@@ -73,8 +106,10 @@ void* compile_and_run() {
         sprintf(run_cmd, "./%s 1> %s 2> %s", exefname, opfname, errfname);
         sprintf(diff_cmd, "diff %s exp.txt", opfname);
 
-        int cppfd = creat(cppfname, 00700);
-        int fbw = write(cppfd, fbuff, fbr);
+        if (receivefile(clsockfd, cppfname) == -1) {
+            close(clsockfd);
+            continue;
+        }
 
         // compile the code
         int status = system(compile_cmd);
@@ -94,7 +129,6 @@ void* compile_and_run() {
                 }
             }
         }
-        close(cppfd);
         close(clsockfd);
     }          
 }

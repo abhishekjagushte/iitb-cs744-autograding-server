@@ -1,12 +1,22 @@
-#include<stdio.h>
+#define __USE_GNU
+
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include<fcntl.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <pthread.h>
 
+const int BUFFER_SIZE = 1024;
+const int FILE_SIZE_BUFFER_SIZE = 4;
+struct submit_args {
+    int sockfd;
+    char* fname;
+    int status;
+};
 
 void error(char* message) {
     printf("%s\n", message);
@@ -20,11 +30,6 @@ int create_socket_connection(struct sockaddr_in serv_addr, int timeout) {
 
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
-    // set timeout
-    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout_st, sizeof(timeout_st)) < 0) {
-        error("Error setting timeout value");
-    }
-
     if (sockfd < 0) {
         error("Error in creating a socket");
     }
@@ -36,61 +41,114 @@ int create_socket_connection(struct sockaddr_in serv_addr, int timeout) {
     return sockfd;
 }
 
-void send_files_to_server(
+int send_file(int sockfd, char* fname) {
+    char buff[BUFFER_SIZE];
+
+    FILE* file = fopen(fname, "r+");
+    if (!file) {
+        error("Couldn't open file");
+        return -1;
+    }
+
+    fseek(file, 0L, SEEK_END);
+    int file_size = ftell(file);
+    fseek(file, 0L, SEEK_SET);
+
+    char file_size_bytes[FILE_SIZE_BUFFER_SIZE];
+    memcpy(file_size_bytes, &file_size, sizeof(file_size));
+
+    if (send(sockfd, (char*) &file_size_bytes, sizeof(file_size), 0) == -1) {
+        error("Error in sending file size");
+    }
+
+    while(!feof(file)) {
+        size_t fbr = fread(buff, 1, sizeof(buff), file);
+
+        if (send(sockfd, buff, fbr, 0) == -1) {
+            error("Error in sending file to server");
+            fclose(file);
+            return -1;
+        }
+
+        bzero(buff, BUFFER_SIZE);
+    }
+    fclose(file);
+    return 0;
+}
+
+void* submit(void* args) {
+    struct submit_args *args_r = (struct submit_args*) args;
+    int sockfd = args_r->sockfd;
+    char* fname = args_r->fname;
+
+    if (send_file(sockfd, fname) == -1) {
+        args_r->status = -1;
+        return (void *) -1;
+    }
+
+    char res[1000];
+    int resbytes = recv(sockfd, &res, 1000, 0);
+
+    if (resbytes < 0) {
+        args_r->status = -1;
+    }
+
+    args_r->status = 0;
+}
+
+int send_grading_requests(
     struct sockaddr_in serv_addr, int count, char* fname, int sleep_time, int prog_id, int timeout
 ) {
     int icount = count;
-    char fbuff[10000];
-    int fd = open(fname, O_RDONLY);
-    int fbr = read(fd, &fbuff, 10000);
-    close(fd);
     int succ = 0;
     int time_sum = 0;
     int sockfd;
     int timeouts = 0;
     int errors = 0;
 
-
     // total time taken for loop
     struct timeval total_time_start;
     gettimeofday(&total_time_start, NULL);
     
-    while (count--) {  
+    while (count--) {
         sockfd = create_socket_connection(serv_addr, timeout);
 
         // start time
         struct timeval start_time;
         gettimeofday(&start_time, NULL);
+        
+        pthread_t timeout_th;
+        struct timespec ts;
 
-        int fbw = send(sockfd, fbuff, fbr, 0);
+        if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
+            continue;
 
-        if (fbw < 0) {
-            printf("Error in writing\n");
+        ts.tv_sec += timeout;
+
+        int submit_status = 0;
+        struct submit_args args = {sockfd, fname, submit_status};
+
+        pthread_create(&timeout_th, NULL, submit, (void *) &args);
+
+        int status = pthread_timedjoin_np(timeout_th, NULL, &ts);
+        
+        // the updated status for the submitted code is updated in args itself
+        submit_status = args.status;
+
+        // end time
+        struct timeval end_time;
+        gettimeofday(&end_time, NULL);
+
+        int t_diff = (end_time.tv_sec*1000 + end_time.tv_usec/1000) - (start_time.tv_sec*1000 + start_time.tv_usec/1000);
+        time_sum += t_diff;
+
+        if (status == ETIMEDOUT) {
+            pthread_detach(timeout_th);
+            timeouts++;
+        } else if (submit_status != 0 || status != 0){
+            errors++;
         } else {
-            char res[1000];
-                
-            int resbytes = recv(sockfd, &res, 1000, 0);
-
-            // end time
-            struct timeval end_time;
-            gettimeofday(&end_time, NULL);
-
-            int t_diff = (end_time.tv_sec*1000 + end_time.tv_usec/1000) - (start_time.tv_sec*1000 + start_time.tv_usec/1000);
-            time_sum += t_diff;
-
-            if (resbytes <= 0) {
-                int recverr = errno;
-                printf("errno = %d EWOULDBLOCK = %d EAGAIN = %d timeouts = %d\n", recverr, EWOULDBLOCK, EAGAIN, timeouts);
-                if (recverr == EWOULDBLOCK || recverr == EAGAIN) {
-                    timeouts++;
-                } else {
-                    errors++;
-                }
-                continue;
-            }
-
             succ++;
-            write(STDOUT_FILENO, res, resbytes);
         }
         close(sockfd);
         sleep(sleep_time);
@@ -138,5 +196,5 @@ int main(int argc, char *argv[]) {
     int time_sum = 0;
     int succ = 0;
 
-    send_files_to_server(serv_addr, count, fname, sleep_time, prog_id, timeout);
+    send_grading_requests(serv_addr, count, fname, sleep_time, prog_id, timeout);
 }
