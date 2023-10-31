@@ -8,6 +8,7 @@
 
 #include "queue.h"
 #include "fileshare.h"
+#include "error.h"
 
 Queue *cliQueue;
 
@@ -91,6 +92,7 @@ void* compile_and_run() {
 }
 
 int main(int argc, char* argv[]) {
+    char* location[] = {"gradingserver.c", "main", NULL};
     int sockfd, portno;
     int thread_pool_size;
     int active_threads = 0;
@@ -98,8 +100,7 @@ int main(int argc, char* argv[]) {
     cliQueue = createQueue();
 
     if (argc != 3) {
-        printf("Usage: <port-no> <thread pool size>\n");
-        exit(0);
+        error_exit(location, "Usage: <port-no> <thread pool size>", 1);
     }   
 
     portno = atoi(argv[1]);
@@ -110,8 +111,7 @@ int main(int argc, char* argv[]) {
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sockfd < 0) {
-        printf("Error creating socket\n");
-        exit(1);
+        error_exit(location, "Error creating socket", 1);
     }
 
     struct sockaddr_in serv_addr, cli_addr;
@@ -122,8 +122,7 @@ int main(int argc, char* argv[]) {
     serv_addr.sin_port = htons(portno);
 
     if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-        printf("Couldn't bind\n");
-        exit(1);
+        error_exit(location, "Coudn't bind, Address already in use!", 1);
     }
 
     listen(sockfd, 2);

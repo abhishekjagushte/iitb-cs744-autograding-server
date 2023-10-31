@@ -11,6 +11,7 @@
 #include <pthread.h>
 
 #include "fileshare.h"
+#include "errors.h"
 
 struct submit_args {
     int sockfd;
@@ -18,12 +19,8 @@ struct submit_args {
     int status;
 };
 
-void error(char* message) {
-    printf("%s\n", message);
-    exit(1);
-}
-
 int create_socket_connection(struct sockaddr_in serv_addr, int timeout) {
+    char* location = {"gradingclient.c", "create_socket_connection", NULL}; 
     struct timeval timeout_st;
     timeout_st.tv_sec = timeout;
     timeout_st.tv_usec = 0;
@@ -31,11 +28,11 @@ int create_socket_connection(struct sockaddr_in serv_addr, int timeout) {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sockfd < 0) {
-        error("Error in creating a socket");
+        error_exit(location, "Error in creating a socket", 1);
     }
 
     if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-        error("Couldn't connect!");
+        error_exit(location, "Couldn't connect!", 1);
     }
 
     return sockfd;
@@ -130,12 +127,12 @@ int send_grading_requests(
 
 
 int main(int argc, char *argv[]) {
+    char* location = {"gradingclient.c", "main", NULL};
     char *fname;
     int sockfd = 0;
 
     if (argc != 8) {
-        printf("Usage: <server-IP> <server-port> <file-name> <loop num> <sleep time> <id> <timeout-in-secs>\n");
-        exit(1);
+        error_exit(location, "Usage: <server-IP> <server-port> <file-name> <loop num> <sleep time> <id> <timeout-in-secs>", 1);
     }
 
     struct sockaddr_in serv_addr;
@@ -150,7 +147,7 @@ int main(int argc, char *argv[]) {
     int timeout = atoi(argv[7]);
 
     if (server == NULL) {
-        error("No such host available");
+        error_exit(location, "No such host available", 1);
     }
 
     bzero((char *)&serv_addr, sizeof(serv_addr));

@@ -5,7 +5,9 @@
         "pthread.h": "c",
         "errno.h": "c",
         "time.h": "c",
-        "fileshare.h": "c"
+        "fileshare.h": "c",
+        "errors.h": "c",
+        "stdio.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
