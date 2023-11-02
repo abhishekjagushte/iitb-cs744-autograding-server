@@ -6,9 +6,9 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
-#include "queue/queue.h"
-#include "fileshare.h"
-#include "error/errors.h"
+#include "serverFiles/utilityFiles/queue/queue.h"
+#include "serverFiles/utilityFiles/fileshare/fileshare.h"
+#include "serverFiles/utilityFiles/error/errors.h"
 
 Queue *cliQueue;
 
@@ -62,7 +62,7 @@ void* compile_and_run() {
 
         sprintf(compile_cmd, "g++ -o %s %s 2> %s", exefname, cppfname, errfname);
         sprintf(run_cmd, "./%s 1> %s 2> %s", exefname, opfname, errfname);
-        sprintf(diff_cmd, "diff %s exp.txt", opfname);
+        sprintf(diff_cmd, "diff %s serverFiles/exp.txt", opfname);
 
         if (receivefile(clsockfd, cppfname) == -1) {
             close(clsockfd);

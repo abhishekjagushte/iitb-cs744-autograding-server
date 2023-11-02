@@ -3,7 +3,7 @@ if [ $# -ne 4 ]; then
     exit
 fi
 
-plots_path=./plots
+plots_path=./analysisFiles/plots
 
 mkdir -p outputs
 rm -f outputs/*
