@@ -1,6 +1,6 @@
 op*
 exe*
-outputs/*
+grader/outputs/*
 client
 server
 threads.txt

@@ -5,18 +5,18 @@ fi
 
 plots_path=./analysisFiles/plots
 
-mkdir -p outputs
+mkdir -p grader/outputs
 rm -f outputs/*
 
 for (( i=1 ; i<=$1 ; i++ )); 
 do
-    ./client 127.0.0.1 3000 programs/correctp.cpp $2 $3 $i $4 > outputs/op$i.txt &
+    ./client 127.0.0.1 3000 programs/correctp.cpp $2 $3 $i $4 > grader/outputs/op$i.txt &
 done
 
 wait
 
 
-grep "Average" outputs/*.txt | awk  -v nclients="$1" '
+grep "Average" grader/outputs/*.txt | awk  -v nclients="$1" '
     BEGIN{
         sum=0
         total=0
