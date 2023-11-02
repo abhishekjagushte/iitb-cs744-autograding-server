@@ -10,7 +10,7 @@ rm -f outputs/*
 
 for (( i=1 ; i<=$1 ; i++ )); 
 do
-    ./client 127.0.0.1 3000 correctp.cpp $2 $3 $i $4 > outputs/op$i.txt &
+    ./client 127.0.0.1 3000 programs/correctp.cpp $2 $3 $i $4 > outputs/op$i.txt &
 done
 
 wait

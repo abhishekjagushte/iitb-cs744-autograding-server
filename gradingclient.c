@@ -11,7 +11,7 @@
 #include <pthread.h>
 
 #include "fileshare.h"
-#include "errors.h"
+#include "error/errors.h"
 
 struct submit_args {
     int sockfd;

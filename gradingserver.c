@@ -6,9 +6,9 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
-#include "queue.h"
+#include "queue/queue.h"
 #include "fileshare.h"
-#include "error.h"
+#include "error/errors.h"
 
 Queue *cliQueue;
 
