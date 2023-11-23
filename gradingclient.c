@@ -10,8 +10,8 @@
 #include <errno.h>
 #include <pthread.h>
 
-#include "fileshare.h"
-#include "errors.h"
+#include "serverFiles/utilityFiles/fileshare/fileshare.h"
+#include "serverFiles/utilityFiles/error/errors.h"
 
 struct submit_args {
     int sockfd;

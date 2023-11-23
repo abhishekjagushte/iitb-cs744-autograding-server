@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cat /dev/null > ./plots/threads.txt
+cat /dev/null > ./analysisFiles/plots/threads.txt
 
 total=0
 n=0
@@ -14,7 +14,7 @@ while true; do
         n=$(($n + 1))
         avg=$(bc -l <<< "scale=2; $total / $n")
 
-        echo $avg > ./plots/threads.txt
+        echo $avg > ./analysisFiles/plots/threads.txt
     fi
 
     # Sleep for 1 seconds
