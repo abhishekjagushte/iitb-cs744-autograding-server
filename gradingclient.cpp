@@ -20,7 +20,7 @@ struct submit_args {
 };
 
 int create_socket_connection(struct sockaddr_in serv_addr, int timeout) {
-    char* location = {"gradingclient.c", "create_socket_connection", NULL}; 
+    char* location = "gradingclient.c - main"; 
     struct timeval timeout_st;
     timeout_st.tv_sec = timeout;
     timeout_st.tv_usec = 0;
@@ -127,7 +127,7 @@ int send_grading_requests(
 
 
 int main(int argc, char *argv[]) {
-    char* location = {"gradingclient.c", "main", NULL};
+    char* location = "gradingclient.c - main";
     char *fname;
     int sockfd = 0;
 

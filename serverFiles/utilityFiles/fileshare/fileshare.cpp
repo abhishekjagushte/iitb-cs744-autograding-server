@@ -1,4 +1,7 @@
 #include "fileshare.h"
+#include <sys/socket.h>
+#include <unistd.h>
+
 
 const int BUFFER_SIZE = 1024;
 const int FILE_SIZE_BUFFER_SIZE = 4;
