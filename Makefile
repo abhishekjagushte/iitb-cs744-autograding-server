@@ -1,12 +1,12 @@
 all: server client
 
-CC = gcc -w
+CC = g++ -w
 CC_FLAGS = -Wno-implicit-function-declaration
 
-PROGS_SERVER = serverFiles/utilityFiles/queue/queue.c serverFiles/utilityFiles/error/errors.c serverFiles/utilityFiles/fileshare/fileshare.c gradingserver.c
+PROGS_SERVER = serverFiles/utilityFiles/queue/queue.cpp serverFiles/utilityFiles/error/errors.cpp serverFiles/utilityFiles/fileshare/fileshare.cpp gradingserver.cpp
 OBJS_SERVER = queue.o errors.o fileshare.o gradingserver.o
 
-PROGS_CLIENT = serverFiles/utilityFiles/fileshare/fileshare.c serverFiles/utilityFiles/error/errors.c gradingclient.c
+PROGS_CLIENT = serverFiles/utilityFiles/fileshare/fileshare.cpp serverFiles/utilityFiles/error/errors.cpp gradingclient.cpp
 OBJS_CLIENT = fileshare.o errors.o gradingclient.o
 
 OBJS_FINAL = client server

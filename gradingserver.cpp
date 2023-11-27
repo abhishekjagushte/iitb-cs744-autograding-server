@@ -36,7 +36,7 @@ void send_msg_to_client(int clsockfd, char* msg) {
     write(clsockfd, msg, strlen(msg));
 }
 
-void* compile_and_run() {
+void* compile_and_run(void* args) {
     char cppfname[30];
     char errfname[30];
     char opfname[30];
@@ -92,7 +92,7 @@ void* compile_and_run() {
 }
 
 int main(int argc, char* argv[]) {
-    char* location[] = {"gradingserver.c", "main", NULL};
+    char* location = "gradingclient.c - main";
     int sockfd, portno;
     int thread_pool_size;
     int active_threads = 0;
@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
     
     pthread_t thread[thread_pool_size];
     for(int i=0; i<thread_pool_size; i++)
-        if (pthread_create(&thread, NULL, compile_and_run, NULL) != 0)
+        if (pthread_create(&thread[i], NULL, compile_and_run, NULL) != 0)
             printf("Failed to create Thread\n");
     
 
