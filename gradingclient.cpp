@@ -17,6 +17,7 @@ struct submit_args {
     int sockfd;
     char* fname;
     int status;
+    int prog_id;
 };
 
 int create_socket_connection(struct sockaddr_in serv_addr, int timeout) {
@@ -38,10 +39,18 @@ int create_socket_connection(struct sockaddr_in serv_addr, int timeout) {
     return sockfd;
 }
 
+void write_request_ids_to_file(char* request_id, int prog_id) {
+    char write_cmd[50];
+    sprintf(write_cmd, "echo %s >> clientFiles/%d.txt", request_id, prog_id);
+
+    system(write_cmd);
+}
+
 void* submit(void* args) {
     struct submit_args *args_r = (struct submit_args*) args;
     int sockfd = args_r->sockfd;
     char* fname = args_r->fname;
+    int prog_id = args_r->prog_id;
 
     if (send_file(sockfd, fname) == -1) {
         args_r->status = -1;
@@ -55,6 +64,8 @@ void* submit(void* args) {
         args_r->status = -1;
     }
 
+    // Accept the request ID
+    write_request_ids_to_file(res, prog_id);
     args_r->status = 0;
 }
 
@@ -88,7 +99,7 @@ int send_grading_requests(
         ts.tv_sec += timeout;
 
         int submit_status = 0;
-        struct submit_args args = {sockfd, fname, submit_status};
+        struct submit_args args = {sockfd, fname, submit_status, prog_id};
 
         pthread_create(&timeout_th, NULL, submit, (void *) &args);
 

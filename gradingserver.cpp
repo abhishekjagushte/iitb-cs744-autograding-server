@@ -9,6 +9,7 @@
 #include "serverFiles/utilityFiles/queue/queue.h"
 #include "serverFiles/utilityFiles/fileshare/fileshare.h"
 #include "serverFiles/utilityFiles/error/errors.h"
+#include "serverFiles/utilityFiles/request-id/request_id.h"
 
 Queue *cliQueue;
 
@@ -68,6 +69,12 @@ void* compile_and_run(void* args) {
             close(clsockfd);
             continue;
         }
+
+        // Generate request ID
+        char* request_id = generateFormattedTimestampID();
+        
+        // send the request id to client
+        send_msg_to_client(clsockfd, request_id);
 
         // compile the code
         int status = system(compile_cmd);
