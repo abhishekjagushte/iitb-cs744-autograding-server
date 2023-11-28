@@ -133,6 +133,15 @@ int send_status_requests(
 
     send_reqID(sockfd, reqID);
 
+    char buff[100];
+    bzero(buff, 100);
+
+    recv(sockfd, buff, 100, 0);
+
+    char write_cmd[100];
+    sprintf(write_cmd, "echo %s > clientFiles/status_%d.txt", buff, prog_id);
+    system(write_cmd);
+
     receive_reqDetails(sockfd);
 
     close(sockfd);

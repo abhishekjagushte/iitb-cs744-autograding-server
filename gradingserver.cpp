@@ -61,7 +61,13 @@ void handle_status_check_request(int clsockfd) {
         send_msg_to_client(clsockfd, "Invalid request id");
         return;
     }
-    cout << "reaching here\n";
+
+    if(status == STATUS_COMPILER_ERROR || status == STATUS_RUNTIME_ERROR || status == STATUS_SUCCESSFUL){
+        send_msg_to_client(clsockfd, "processing is done");
+    }
+    else{
+        send_msg_to_client(clsockfd, "processing is not done\n");
+    }
 
     if (status == STATUS_COMPILER_ERROR){
         sprintf(errfname, "./grader/err%s.txt", request_id);
