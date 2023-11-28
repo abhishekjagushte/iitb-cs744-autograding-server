@@ -56,44 +56,56 @@ void* compile_and_run(void* args) {
             
         pthread_mutex_unlock(&qmutex);
 
-        sprintf(cppfname, "./grader/src%d.cpp", clsockfd);
-        sprintf(errfname, "./grader/err%d.txt", clsockfd);
-        sprintf(opfname, "./grader/op%d.txt", clsockfd);
-        sprintf(exefname, "./grader/exe%d", clsockfd);
-
-        sprintf(compile_cmd, "g++ -o %s %s 2> %s", exefname, cppfname, errfname);
-        sprintf(run_cmd, "./%s 1> %s 2> %s", exefname, opfname, errfname);
-        sprintf(diff_cmd, "diff %s serverFiles/exp.txt", opfname);
-
-        if (receivefile(clsockfd, cppfname) == -1) {
+        int check = receive_reqType(clsockfd);
+        if(check == -1){
             close(clsockfd);
             continue;
         }
+        else if(check == 0){
+            send_msg_to_client(clsockfd, "yoyo\n");
+        }
+        else{
+            sprintf(cppfname, "./grader/src%d.cpp", clsockfd);
+            sprintf(errfname, "./grader/err%d.txt", clsockfd);
+            sprintf(opfname, "./grader/op%d.txt", clsockfd);
+            sprintf(exefname, "./grader/exe%d", clsockfd);
 
-        // Generate request ID
-        char* request_id = generateFormattedTimestampID();
-        
-        // send the request id to client
-        send_msg_to_client(clsockfd, request_id);
+            sprintf(compile_cmd, "g++ -o %s %s 2> %s", exefname, cppfname, errfname);
+            sprintf(run_cmd, "./%s 1> %s 2> %s", exefname, opfname, errfname);
+            sprintf(diff_cmd, "diff %s serverFiles/exp.txt", opfname);
 
-        // compile the code
-        int status = system(compile_cmd);
+            if (receivefile(clsockfd, cppfname) == -1) {
+                close(clsockfd);
+                continue;
+            }
+            
 
-        if (status != 0) {
-            send_msg_from_file_to_client(clsockfd, errfname);
-        } else {
-            // check runtime error
-            int r_status = system(run_cmd);
-            if (r_status != 0) {
+            // Generate request ID
+            char* request_id = generateFormattedTimestampID();
+            
+            // send the request id to client
+            send_msg_to_client(clsockfd, request_id);
+
+            // compile the code
+            int status = system(compile_cmd);
+
+            if (status != 0) {
                 send_msg_from_file_to_client(clsockfd, errfname);
             } else {
-                // if no runtime error, the output is saved in op.txt
-                int st = system(diff_cmd);
-                if (st==0) {
-                    send_msg_to_client(clsockfd, "Ran successfully!\n");
+                // check runtime error
+                int r_status = system(run_cmd);
+                if (r_status != 0) {
+                    send_msg_from_file_to_client(clsockfd, errfname);
+                } else {
+                    // if no runtime error, the output is saved in op.txt
+                    int st = system(diff_cmd);
+                    if (st==0) {
+                        send_msg_to_client(clsockfd, "Ran successfully!\n");
+                    }
                 }
             }
         }
+
         close(clsockfd);
     }          
 }
@@ -141,7 +153,7 @@ int main(int argc, char* argv[]) {
         if (pthread_create(&thread[i], NULL, compile_and_run, NULL) != 0)
             printf("Failed to create Thread\n");
     
-
+    
     while(1) {
         int clsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &cl_arr_len);
 

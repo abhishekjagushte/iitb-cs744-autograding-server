@@ -1,5 +1,6 @@
 #define __USE_GNU
 
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +14,8 @@
 #include "serverFiles/utilityFiles/fileshare/fileshare.h"
 #include "serverFiles/utilityFiles/error/errors.h"
 
+using namespace std;
+
 struct submit_args {
     int sockfd;
     char* fname;
@@ -21,7 +24,7 @@ struct submit_args {
 };
 
 int create_socket_connection(struct sockaddr_in serv_addr, int timeout) {
-    char* location = "gradingclient.c - main"; 
+    char* location = "gradingclient.c - create_socket_connection"; 
     struct timeval timeout_st;
     timeout_st.tv_sec = timeout;
     timeout_st.tv_usec = 0;
@@ -41,7 +44,7 @@ int create_socket_connection(struct sockaddr_in serv_addr, int timeout) {
 
 void write_request_ids_to_file(char* request_id, int prog_id) {
     char write_cmd[50];
-    sprintf(write_cmd, "echo %s >> clientFiles/%d.txt", request_id, prog_id);
+    sprintf(write_cmd, "echo %s,%s, >> clientFiles/%d.txt", request_id, prog_id);
 
     system(write_cmd);
 }
@@ -136,26 +139,79 @@ int send_grading_requests(
 
 }
 
+int send_status_requests(
+    struct sockaddr_in serv_addr, char* reqID, int prog_id
+) {
+    int sockfd;
+    char* location = "gradingclient.c - send_status_requests";
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (sockfd < 0) {
+        error_exit(location, "Error in creating a socket", 1);
+    }
+
+    if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+        error_exit(location, "Couldn't connect!", 1);
+    }
+
+    send_reqType(sockfd, "status");
+
+    send_reqID(sockfd, reqID);
+
+    receive_reqDetails(sockfd);
+
+    close(sockfd);
+}
+
 
 int main(int argc, char *argv[]) {
     char* location = "gradingclient.c - main";
     char *fname;
-    int sockfd = 0;
+    // int sockfd = 0;
 
-    if (argc != 8) {
-        error_exit(location, "Usage: <server-IP> <server-port> <file-name> <loop num> <sleep time> <id> <timeout-in-secs>", 1);
+    // if (argc != 9) {
+    //     error_exit(location, "Usage: <submit|new> <server-IP> <server-port> <file-name> <loop num> <sleep time> <id> <timeout-in-secs>", 1);
+    // }
+    char *req_type;
+    if(argc > 5){
+        req_type = argv[1];
+        if(!strcmp(req_type, "new")){
+            if(argc != 9)
+                error_exit(location, "Usage: <new> <server-IP> <server-port> <file-name> <loop num> <sleep time> <id> <timeout-in-secs>", 1);
+        }
+        else if(!strcmp(req_type, "status")){
+            if(argc != 6)
+                error_exit(location, "Usage: <status> <server-IP> <server-port> <requestID> <id>", 1);
+        }
+        else
+            error_exit(location, "Usage: <new|status> <server-IP> <server-port> <file-name|requestID> <loop num> <sleep time> <id> <timeout-in-secs>", 1);
     }
+    else
+        error_exit(location, "Usage: <new|status> <server-IP> <server-port> <file-name|requestID> <loop num> <sleep time> <id> <timeout-in-secs>", 1);
 
     struct sockaddr_in serv_addr;
     struct hostent *server;
 
-    server = gethostbyname(argv[1]);
-    int portno = atoi(argv[2]);
-    fname = argv[3];
-    int count = atoi(argv[4]);
-    int sleep_time = atoi(argv[5]);
-    int prog_id = atoi(argv[6]);
-    int timeout = atoi(argv[7]);
+    server = gethostbyname(argv[2]);
+    int portno = atoi(argv[3]);
+    fname = argv[4];
+
+    int count;
+    int sleep_time;
+    int prog_id;
+    int timeout;
+
+    if(!strcmp(req_type, "new")){
+        count = atoi(argv[5]);
+        sleep_time = atoi(argv[6]);
+        prog_id = atoi(argv[7]);
+        timeout = atoi(argv[8]);
+    }
+    else{
+        prog_id = atoi(argv[5]);
+    }
+
 
     if (server == NULL) {
         error_exit(location, "No such host available", 1);
@@ -169,5 +225,9 @@ int main(int argc, char *argv[]) {
     int time_sum = 0;
     int succ = 0;
 
-    send_grading_requests(serv_addr, count, fname, sleep_time, prog_id, timeout);
+    if(!strcmp(req_type, "new"))
+        send_grading_requests(serv_addr, count, fname, sleep_time, prog_id, timeout);
+    else{
+        send_status_requests(serv_addr, fname, prog_id);
+    }
 }

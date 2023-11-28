@@ -1,4 +1,5 @@
 #include "errors.h"
+#include <iostream>
 
 void print_error(char* location, char* msg) {
     printf("%s: ", location);
