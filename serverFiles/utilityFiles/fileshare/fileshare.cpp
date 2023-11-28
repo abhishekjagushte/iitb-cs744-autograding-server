@@ -20,8 +20,6 @@ int receivefile(int clsockfd, char* cppfname) {
     }
     memcpy(&file_size, file_size_bytes, sizeof(file_size));
 
-    printf("filename = %s\n", cppfname);
-
     FILE *file = fopen(cppfname, "wb");
     if (!file) {
         printf("Error in creating cpp file\n");
@@ -121,8 +119,6 @@ int receive_reqType(int clsockfd) {
             printf("Error in receiving file\n");
             return -1;
     }
-
-    printf("res = %s\n", buff);
 
     if(!strcmp(buff, "new")){
         return 1;

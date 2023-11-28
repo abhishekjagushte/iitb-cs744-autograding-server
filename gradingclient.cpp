@@ -61,7 +61,6 @@ string getCurrentTimestamp() {
 
 void write_request_ids_to_file(char* request_id, int prog_id) {
     char write_cmd[100];
-    printf("%s\n", getCurrentTimestamp().c_str());
 
     sprintf(write_cmd, "echo \"%s,%s\" >> clientFiles/%d.txt", request_id, getCurrentTimestamp().c_str(), prog_id);
     
@@ -108,13 +107,6 @@ int send_grading_requests(
     bzero(buff, 30);
 
     recv(sockfd, buff, 30, 0);
-
-    // bzero(buff, 30);
-
-    // recv(sockfd, buff, 30, 0);
-
-    printf("Buffer = %s\n", buff);
-
 
     write_request_ids_to_file(buff, prog_id);
 

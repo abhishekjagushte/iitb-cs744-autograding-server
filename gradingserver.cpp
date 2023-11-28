@@ -232,7 +232,6 @@ int main(int argc, char* argv[]) {
         }
 
         int check = receive_reqType(clsockfd);
-        cout << "check = " << check << endl;
         if (check == 1) {
             // new request
             pthread_mutex_lock(&qmutex1); 
