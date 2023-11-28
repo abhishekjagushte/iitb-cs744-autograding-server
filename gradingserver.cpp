@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include<fcntl.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <pthread.h>
 #include <map>
@@ -24,8 +24,10 @@ pthread_cond_t qempty2 = PTHREAD_COND_INITIALIZER;
 const int STATUS_SUCCESSFUL = 0;
 const int STATUS_COMPILER_ERROR = 1;
 const int STATUS_RUNTIME_ERROR = 2;
+const int STATUS_ASSIGNED_THREAD = 3;
+const int STATUS_QUEUED = 4;
 
-map<string, int> request_status_map;
+unordered_map<string, int> request_status_map;
 
 
 void send_msg_from_file_to_client(int clsockfd, char* outfilename) {
@@ -46,7 +48,6 @@ void send_msg_from_file_to_client(int clsockfd, char* outfilename) {
 void send_msg_to_client(int clsockfd, char* msg) {
     write(clsockfd, msg, strlen(msg));
 }
-
 
 void handle_status_check_request(int clsockfd) {
     // Ask the client for request id
@@ -69,7 +70,17 @@ void handle_status_check_request(int clsockfd) {
     else if(status == STATUS_RUNTIME_ERROR) {
         sprintf(errfname, "./grader/err%s.txt", request_id);
         send_msg_from_file_to_client(clsockfd, errfname);
-    } else {
+    } 
+    else if(status == STATUS_ASSIGNED_THREAD) {
+        send_msg_to_client(clsockfd, "Accepted and currently being processed");
+    }
+    else if(status == STATUS_QUEUED) {
+        long pos = findPos(cliQueue, request_id);
+        char msg[50];
+        sprintf(msg, "Accepted and in the queue at position %ld", pos);
+        send_msg_from_file_to_client(clsockfd, errfname);
+    }
+    else {
         send_msg_to_client(clsockfd, "Ran successfully\n");
     }
 }
@@ -83,6 +94,7 @@ void* compile_and_run(void* args) {
     char run_cmd[200];
     char diff_cmd[200];
 
+
     while(1){        
         pthread_mutex_lock(&qmutex2);
         
@@ -91,6 +103,8 @@ void* compile_and_run(void* args) {
         
         ClientRequest req = dequeue(cliQueue);
         char* request_id = req.request_id;
+
+        request_status_map.emplace(string(request_id), STATUS_ASSIGNED_THREAD);
             
         pthread_mutex_unlock(&qmutex2);
 
@@ -139,6 +153,7 @@ void* file_add_in_queue(void* args) {
         ClientRequest req = dequeue(fileQueue);
         int clsockfd = req.sockfd;
         char* request_id = req.request_id;
+        request_status_map.emplace(string(request_id), STATUS_QUEUED);
             
         pthread_mutex_unlock(&qmutex1);
 

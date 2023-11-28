@@ -54,7 +54,7 @@ string getCurrentTimestamp() {
     char buffer[80]; // Adjust the size if needed
     std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localTime);
 
-    std::string timestamp = std::string(buffer) + "." + std::to_string(micros.count()) + " microseconds";   
+    std::string timestamp = std::string(buffer) + "." + std::to_string(micros.count());   
 
     return timestamp;
 }
