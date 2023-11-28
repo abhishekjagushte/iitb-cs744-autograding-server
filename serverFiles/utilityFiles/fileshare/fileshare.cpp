@@ -1,6 +1,8 @@
 #include "fileshare.h"
 #include <sys/socket.h>
 #include <unistd.h>
+#include <string.h>
+#include <iostream>
 
 
 const int BUFFER_SIZE = 1024;
@@ -82,3 +84,60 @@ int send_file(int sockfd, char* fname) {
     fclose(file);
     return 0;
 }
+
+int send_reqID(int sockfd, char* reqID) {
+    char buff[BUFFER_SIZE];
+    bzero(buff, BUFFER_SIZE);
+    strcpy(buff, reqID);
+
+    if (send(sockfd, buff, sizeof(buff), 0) == -1) {
+        printf("Error in sending file to server\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+int send_reqType(int sockfd, char* type) {
+    char buff[BUFFER_SIZE];
+    bzero(buff, BUFFER_SIZE);
+    strcpy(buff, type);
+
+    if (send(sockfd, buff, sizeof(buff), 0) == -1) {
+        printf("Error in sending file to server\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+int receive_reqType(int clsockfd) {
+    char buff[BUFFER_SIZE];
+    bzero(buff, BUFFER_SIZE);
+
+    if (recv(clsockfd, buff, BUFFER_SIZE, 0) == -1) {
+            printf("Error in receiving file\n");
+            return -1;
+    }
+
+    if(!strcmp(buff, "new")){
+        return 1;
+    }
+    else
+        return 0;
+}
+
+int receive_reqDetails(int clsockfd) {
+    char buff[BUFFER_SIZE];
+    bzero(buff, BUFFER_SIZE);
+
+    if (recv(clsockfd, buff, BUFFER_SIZE, 0) == -1) {
+            printf("Error in receiving file\n");
+            return -1;
+    }
+
+    printf("%s", buff);
+}
+
+
+
