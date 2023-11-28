@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <pthread.h>
+#include <chrono>
 
 #include "serverFiles/utilityFiles/fileshare/fileshare.h"
 #include "serverFiles/utilityFiles/error/errors.h"
@@ -42,9 +43,28 @@ int create_socket_connection(struct sockaddr_in serv_addr, int timeout) {
     return sockfd;
 }
 
+string getCurrentTimestamp() {
+    auto currentTimePoint = std::chrono::system_clock::now();
+
+    std::time_t currentTime = std::chrono::system_clock::to_time_t(currentTimePoint);
+
+    struct tm* localTime = std::localtime(&currentTime);
+
+    auto micros = std::chrono::duration_cast<std::chrono::microseconds>(
+        currentTimePoint.time_since_epoch() % std::chrono::seconds(1)
+    );
+
+    char buffer[80]; // Adjust the size if needed
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localTime);
+
+    std::string timestamp = std::string(buffer) + "." + std::to_string(micros.count()) + " microseconds";   
+
+    return timestamp;
+}
+
 void write_request_ids_to_file(char* request_id, int prog_id) {
     char write_cmd[50];
-    sprintf(write_cmd, "echo %s >> clientFiles/%d.txt", request_id, prog_id);
+    sprintf(write_cmd, "echo %s,%s >> clientFiles/%d.txt", request_id, getCurrentTimestamp(), prog_id);
     
     system(write_cmd);
 }
