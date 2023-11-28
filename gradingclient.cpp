@@ -24,11 +24,8 @@ struct submit_args {
     int prog_id;
 };
 
-int create_socket_connection(struct sockaddr_in serv_addr, int timeout) {
-    char* location = "gradingclient.c - create_socket_connection"; 
-    struct timeval timeout_st;
-    timeout_st.tv_sec = timeout;
-    timeout_st.tv_usec = 0;
+int create_socket_connection(struct sockaddr_in serv_addr) {
+    char* location = "gradingclient.c - create_socket_connection";
 
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -63,8 +60,9 @@ string getCurrentTimestamp() {
 }
 
 void write_request_ids_to_file(char* request_id, int prog_id) {
-    char write_cmd[50];
-    sprintf(write_cmd, "echo %s,%s >> clientFiles/%d.txt", request_id, getCurrentTimestamp(), prog_id);
+    char write_cmd[100];
+
+    sprintf(write_cmd, "echo \"%s,%s\" >> clientFiles/%d.txt", request_id, getCurrentTimestamp().c_str(), prog_id);
     
     system(write_cmd);
 }
@@ -93,71 +91,26 @@ void* submit(void* args) {
 }
 
 int send_grading_requests(
-    struct sockaddr_in serv_addr, int count, char* fname, int sleep_time, int prog_id, int timeout
+    struct sockaddr_in serv_addr, char* fname, int prog_id
 ) {
-    int icount = count;
-    int succ = 0;
-    int time_sum = 0;
-    int sockfd;
-    int timeouts = 0;
-    int errors = 0;
-
     // total time taken for loop
-    struct timeval total_time_start;
-    gettimeofday(&total_time_start, NULL);
-    
-    while (count--) {
-        sockfd = create_socket_connection(serv_addr, timeout);
+    int sockfd = create_socket_connection(serv_addr);
 
-        // start time
-        struct timeval start_time;
-        gettimeofday(&start_time, NULL);
-        
-        pthread_t timeout_th;
-        struct timespec ts;
+    int submit_status = 0;
+    struct submit_args args = {sockfd, fname, submit_status, prog_id};
 
-        if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
-            continue;
+    send(sockfd, "new", 4, 0);
 
-        ts.tv_sec += timeout;
+    send_file(sockfd, fname);
 
-        int submit_status = 0;
-        struct submit_args args = {sockfd, fname, submit_status, prog_id};
+    char buff[30];
+    bzero(buff, 30);
 
-        pthread_create(&timeout_th, NULL, submit, (void *) &args);
+    recv(sockfd, buff, 30, 0);
 
-        int status = pthread_timedjoin_np(timeout_th, NULL, &ts);
-        
-        // the updated status for the submitted code is updated in args itself
-        submit_status = args.status;
+    write_request_ids_to_file(buff, prog_id);
 
-
-        // end time
-        struct timeval end_time;
-        gettimeofday(&end_time, NULL);
-
-        int t_diff = (end_time.tv_sec*1000 + end_time.tv_usec/1000) - (start_time.tv_sec*1000 + start_time.tv_usec/1000);
-        time_sum += t_diff;
-
-        if (status == ETIMEDOUT) {
-            pthread_detach(timeout_th);
-            timeouts++;
-        } else if (submit_status != 0 || status != 0){
-            errors++;
-        } else {
-            succ++;
-        }
-        close(sockfd);
-        sleep(sleep_time);
-    }
-
-    struct timeval total_time_end;
-    gettimeofday(&total_time_end, NULL);
-    int t_diff = (total_time_end.tv_sec*1000 + total_time_end.tv_usec/1000) - (total_time_start.tv_sec*1000 + total_time_start.tv_usec/1000);
-
-    float average = (float) time_sum/icount;
-    printf("Successful %d of %d. Average time taken in prog %d = %f with %d loop iterations. Total time taken for loop = %d ms. Throughput = %f Rate of timeouts = %f Rate of errors = %f\n", succ, icount, prog_id, average, icount, t_diff, (float) (succ*1000)/t_diff, (float) (timeouts*1000)/t_diff, (float) (errors*1000)/t_diff);
-
+    close(sockfd);
 }
 
 int send_status_requests(
@@ -189,22 +142,23 @@ int send_status_requests(
 int main(int argc, char *argv[]) {
     char* location = "gradingclient.c - main";
     char *fname;
-
     char *req_type;
-    if(argc > 5){
+
+    if(argc == 6){
         req_type = argv[1];
         if(!strcmp(req_type, "new")){
-            if(argc != 9)
-                error_exit(location, "Usage: <new> <server-IP> <server-port> <file-name> <loop num> <sleep time> <id> <timeout-in-secs>", 1);
+            if(argc != 6)
+                error_exit(location, "Usage: <new> <server-IP> <server-port> <file-name> <id>", 1);
         }
         else if(!strcmp(req_type, "status")){
             if(argc != 6)
                 error_exit(location, "Usage: <status> <server-IP> <server-port> <requestID> <id>", 1);
         }
         else
-            error_exit(location, "Usage: <new|status> <server-IP> <server-port> <file-name|requestID> <loop num> <sleep time> <id> <timeout-in-secs>", 1);
-    } else
-        error_exit(location, "Usage: <new|status> <server-IP> <server-port> <file-name|requestID> <loop num> <sleep time> <id> <timeout-in-secs>", 1);
+            error_exit(location, "Usage: <new|status> <server-IP> <server-port> <file-name|requestID> <id>", 1);
+    }
+    else
+        error_exit(location, "Usage: <new|status> <server-IP> <server-port> <file-name|requestID> <id>", 1);
 
     struct sockaddr_in serv_addr;
     struct hostent *server;
@@ -212,21 +166,7 @@ int main(int argc, char *argv[]) {
     server = gethostbyname(argv[2]);
     int portno = atoi(argv[3]);
     fname = argv[4];
-
-    int count;
-    int sleep_time;
-    int prog_id;
-    int timeout;
-
-    if(!strcmp(req_type, "new")){
-        count = atoi(argv[5]);
-        sleep_time = atoi(argv[6]);
-        prog_id = atoi(argv[7]);
-        timeout = atoi(argv[8]);
-    }
-    else{
-        prog_id = atoi(argv[5]);
-    }
+    int prog_id = atoi(argv[5]);
 
 
     if (server == NULL) {
@@ -242,7 +182,7 @@ int main(int argc, char *argv[]) {
     int succ = 0;
 
     if(!strcmp(req_type, "new"))
-        send_grading_requests(serv_addr, count, fname, sleep_time, prog_id, timeout);
+        send_grading_requests(serv_addr, fname, prog_id);
     else{
         send_status_requests(serv_addr, fname, prog_id);
     }
