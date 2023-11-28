@@ -44,8 +44,8 @@ int create_socket_connection(struct sockaddr_in serv_addr, int timeout) {
 
 void write_request_ids_to_file(char* request_id, int prog_id) {
     char write_cmd[50];
-    sprintf(write_cmd, "echo %s,%s, >> clientFiles/%d.txt", request_id, prog_id);
-
+    sprintf(write_cmd, "echo %s >> clientFiles/%d.txt", request_id, prog_id);
+    
     system(write_cmd);
 }
 
@@ -111,6 +111,7 @@ int send_grading_requests(
         // the updated status for the submitted code is updated in args itself
         submit_status = args.status;
 
+
         // end time
         struct timeval end_time;
         gettimeofday(&end_time, NULL);
@@ -168,11 +169,7 @@ int send_status_requests(
 int main(int argc, char *argv[]) {
     char* location = "gradingclient.c - main";
     char *fname;
-    // int sockfd = 0;
 
-    // if (argc != 9) {
-    //     error_exit(location, "Usage: <submit|new> <server-IP> <server-port> <file-name> <loop num> <sleep time> <id> <timeout-in-secs>", 1);
-    // }
     char *req_type;
     if(argc > 5){
         req_type = argv[1];
@@ -186,8 +183,7 @@ int main(int argc, char *argv[]) {
         }
         else
             error_exit(location, "Usage: <new|status> <server-IP> <server-port> <file-name|requestID> <loop num> <sleep time> <id> <timeout-in-secs>", 1);
-    }
-    else
+    } else
         error_exit(location, "Usage: <new|status> <server-IP> <server-port> <file-name|requestID> <loop num> <sleep time> <id> <timeout-in-secs>", 1);
 
     struct sockaddr_in serv_addr;

@@ -127,11 +127,11 @@ int receive_reqType(int clsockfd) {
         return 0;
 }
 
-int receive_reqDetails(int clsockfd) {
+int receive_reqDetails(int sockfd) {
     char buff[BUFFER_SIZE];
     bzero(buff, BUFFER_SIZE);
 
-    if (recv(clsockfd, buff, BUFFER_SIZE, 0) == -1) {
+    if (recv(sockfd, buff, BUFFER_SIZE, 0) == -1) {
             printf("Error in receiving file\n");
             return -1;
     }
