@@ -15,9 +15,11 @@
 Queue *cliQueue;
 Queue *fileQueue;
 
-pthread_mutex_t qmutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t qmutex1 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t qmutex2 = PTHREAD_MUTEX_INITIALIZER;
 
-pthread_cond_t qempty = PTHREAD_COND_INITIALIZER;
+pthread_cond_t qempty1 = PTHREAD_COND_INITIALIZER;
+pthread_cond_t qempty2 = PTHREAD_COND_INITIALIZER;
 
 const int STATUS_SUCCESSFUL = 0;
 const int STATUS_COMPILER_ERROR = 1;
@@ -58,8 +60,13 @@ void handle_status_check_request(int clsockfd) {
         send_msg_to_client(clsockfd, "Invalid request id");
         return;
     }
-    
-    if (status == STATUS_COMPILER_ERROR || status == STATUS_RUNTIME_ERROR) {
+    cout << "reaching here\n";
+
+    if (status == STATUS_COMPILER_ERROR){
+        sprintf(errfname, "./grader/err%s.txt", request_id);
+        send_msg_from_file_to_client(clsockfd, errfname);
+    }  
+    else if(status == STATUS_RUNTIME_ERROR) {
         sprintf(errfname, "./grader/err%s.txt", request_id);
         send_msg_from_file_to_client(clsockfd, errfname);
     } else {
@@ -68,25 +75,24 @@ void handle_status_check_request(int clsockfd) {
 }
 
 void* compile_and_run(void* args) {
-    char cppfname[30];
-    char errfname[30];
-    char opfname[30];
-    char exefname[30];
-    char compile_cmd[100];
-    char run_cmd[100];
-    char diff_cmd[100];
+    char cppfname[100];
+    char errfname[100];
+    char opfname[100];
+    char exefname[100];
+    char compile_cmd[200];
+    char run_cmd[200];
+    char diff_cmd[200];
 
     while(1){        
-        pthread_mutex_lock(&qmutex);
+        pthread_mutex_lock(&qmutex2);
         
         if(is_queue_empty(cliQueue))
-            pthread_cond_wait(&qempty, &qmutex);
+            pthread_cond_wait(&qempty2, &qmutex2);
         
         ClientRequest req = dequeue(cliQueue);
-        int clsockfd = req.sockfd;
         char* request_id = req.request_id;
             
-        pthread_mutex_unlock(&qmutex);
+        pthread_mutex_unlock(&qmutex2);
 
         sprintf(cppfname, "./grader/src%s.cpp", request_id);
         sprintf(errfname, "./grader/err%s.txt", request_id);
@@ -96,11 +102,6 @@ void* compile_and_run(void* args) {
         sprintf(compile_cmd, "g++ -o %s %s 2> %s", exefname, cppfname, errfname);
         sprintf(run_cmd, "./%s 1> %s 2> %s", exefname, opfname, errfname);
         sprintf(diff_cmd, "diff %s serverFiles/exp.txt", opfname);
-
-        if (receivefile(clsockfd, cppfname) == -1) {
-            close(clsockfd);
-            continue;
-        }
 
         // compile the code
         int status = system(compile_cmd);
@@ -112,7 +113,7 @@ void* compile_and_run(void* args) {
             // check runtime error
             int r_status = system(run_cmd);
             if (r_status != 0) {
-                send_msg_from_file_to_client(clsockfd, errfname);
+                // send_msg_from_file_to_client(clsockfd, errfname);
                 request_status_map.emplace(string(request_id), STATUS_RUNTIME_ERROR);
             } else {
                 // if no runtime error, the output is saved in op.txt
@@ -122,6 +123,39 @@ void* compile_and_run(void* args) {
                 }
             }
         }
+    }          
+}
+
+void* file_add_in_queue(void* args) {
+    char cppfname[100];
+    bzero(cppfname, 100);
+
+    while(1){        
+        pthread_mutex_lock(&qmutex1);
+        
+        if(is_queue_empty(fileQueue))
+            pthread_cond_wait(&qempty1, &qmutex1);
+        
+        ClientRequest req = dequeue(fileQueue);
+        int clsockfd = req.sockfd;
+        char* request_id = req.request_id;
+            
+        pthread_mutex_unlock(&qmutex1);
+
+        sprintf(cppfname, "./grader/src%s.cpp", request_id);
+
+
+        if (receivefile(clsockfd, cppfname) == -1) {
+            close(clsockfd);
+            continue;
+        }
+
+        pthread_mutex_lock(&qmutex2); 
+        
+        enqueue(cliQueue, clsockfd, request_id);
+        pthread_cond_signal(&qempty2);
+            
+        pthread_mutex_unlock(&qmutex2);
         
         close(clsockfd);
     }          
@@ -134,6 +168,7 @@ int main(int argc, char* argv[]) {
     int active_threads = 0;
 
     cliQueue = createQueue();
+    fileQueue = createQueue();
 
     if (argc != 3) {
         error_exit(location, "Usage: <port-no> <thread pool size>", 1);
@@ -164,12 +199,29 @@ int main(int argc, char* argv[]) {
     listen(sockfd, 2);
  
     cl_arr_len = sizeof(cli_addr);
-    
+
+    thread_pool_size+=1;
     pthread_t thread[thread_pool_size];
+
     for(int i=0; i<thread_pool_size; i++)
-        if (pthread_create(&thread[i], NULL, compile_and_run, NULL) != 0)
-            printf("Failed to create Thread\n");
+        if(i < (thread_pool_size-1)/2){
+            if (pthread_create(&thread[i], NULL, compile_and_run, NULL) != 0)
+                printf("Failed to create Thread\n");
+        }
+        else if(i < thread_pool_size-3){
+            if (pthread_create(&thread[i], NULL, file_add_in_queue, NULL) != 0)
+                printf("Failed to create Thread\n");
+        }
+        else if(i == thread_pool_size-2){
+            if (pthread_create(&thread[i], NULL, file_add_in_queue, NULL) != 0)
+                printf("Failed to create Thread\n");
+        }
+        else{
+            if (pthread_create(&thread[i], NULL, file_add_in_queue, NULL) != 0)
+                printf("Failed to create Thread\n");
+        }
     
+    // return 0;
     
     while(1) {
         int clsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &cl_arr_len);
@@ -180,19 +232,18 @@ int main(int argc, char* argv[]) {
         }
 
         int check = receive_reqType(clsockfd);
+        cout << "check = " << check << endl;
         if (check == 1) {
             // new request
-            pthread_mutex_lock(&qmutex); 
+            pthread_mutex_lock(&qmutex1); 
         
             // Generate request ID
             char* request_id = generateFormattedTimestampID();
-            enqueue(cliQueue, clsockfd, request_id);
-
+            enqueue(fileQueue, clsockfd, request_id);
             send_msg_to_client(clsockfd, request_id);
-
-            pthread_cond_signal(&qempty);
+            pthread_cond_signal(&qempty1);
             
-            pthread_mutex_unlock(&qmutex);
+            pthread_mutex_unlock(&qmutex1);
         } else {
             // status check request
             handle_status_check_request(clsockfd);
