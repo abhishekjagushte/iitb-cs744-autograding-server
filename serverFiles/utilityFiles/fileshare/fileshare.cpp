@@ -127,16 +127,22 @@ int receive_reqType(int clsockfd) {
         return 0;
 }
 
-int receive_reqDetails(int sockfd) {
-    char buff[BUFFER_SIZE];
+char* receive_reqDetails(int sockfd) {
+    char* buff = (char*)malloc(BUFFER_SIZE);
+    if (buff == NULL) {
+        perror("Error allocating memory for buffer");
+        return NULL;
+    }
+
     bzero(buff, BUFFER_SIZE);
 
     if (recv(sockfd, buff, BUFFER_SIZE, 0) == -1) {
-            printf("Error in receiving file\n");
-            return -1;
+        perror("Error in receiving data");
+        free(buff); // Free allocated memory before returning NULL
+        return NULL;
     }
 
-    printf("%s", buff);
+    return buff;
 }
 
 

@@ -63,7 +63,6 @@ void handle_status_check_request(int clsockfd) {
     }
 
     int status = request_status_map[string(request_id)];
-    cout<<status<<endl;
 
     if (status == STATUS_COMPILER_ERROR){
         // sprintf(errfname, "./grader/err%s.txt", request_id);

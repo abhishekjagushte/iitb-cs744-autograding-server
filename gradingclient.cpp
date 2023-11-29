@@ -114,7 +114,15 @@ int send_status_requests(
 
     send_reqID(sockfd, reqID);
 
-    receive_reqDetails(sockfd);
+    char* temp = receive_reqDetails(sockfd);
+
+    // printf("%s", temp);
+
+    char write_cmd[100];
+
+    sprintf(write_cmd, "echo \"%s\" > clientFiles/status%d.txt", temp, prog_id);
+    
+    system(write_cmd);
 
     close(sockfd);
 }
@@ -124,7 +132,7 @@ int main(int argc, char *argv[]) {
     char* location = "gradingclient.c - main";
     char *fname;
     char *req_type;
-
+    
     if(argc == 6){
         req_type = argv[1];
         if(!strcmp(req_type, "new")){
@@ -139,7 +147,7 @@ int main(int argc, char *argv[]) {
             error_exit(location, "Usage: <new|status> <server-IP> <server-port> <file-name|requestID> <id>", 1);
     }
     else
-        error_exit(location, "Usage: <new|status> <server-IP> <server-port> <file-name|requestID> <id>", 1);
+        error_exit(location, ">> Usage: <new|status> <server-IP> <server-port> <file-name|requestID> <id>", 1);
 
     struct sockaddr_in serv_addr;
     struct hostent *server;
