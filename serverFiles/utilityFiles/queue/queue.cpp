@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 
 Queue* createQueue() {
@@ -72,3 +73,15 @@ _Bool is_queue_empty(Queue* q) {
     return q->front == NULL;
 }
 
+long findPos(Queue *q, char *reqID){
+    long x=0;
+    Node* temp = q->front;
+
+    while(temp != NULL && strcmp(temp->request_id, reqID)){
+        temp = temp->next;
+        x++;
+    }
+    if(temp == NULL)    return -1;
+
+    return x;
+}

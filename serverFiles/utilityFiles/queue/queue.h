@@ -33,3 +33,4 @@ ClientRequest dequeue(Queue* q);
 _Bool is_queue_empty(Queue* q);
 Node* create_node(int val, char* request_id);
 void print_queue(Queue* q);
+long findPos(Queue *q, char *reqID);

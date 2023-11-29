@@ -27,7 +27,7 @@ const int STATUS_RUNTIME_ERROR = 2;
 const int STATUS_ASSIGNED_THREAD = 3;
 const int STATUS_QUEUED = 4;
 
-map<string, int> request_status_map;
+unordered_map<string, int> request_status_map;
 
 
 void send_msg_from_file_to_client(int clsockfd, char* outfilename) {
@@ -57,22 +57,32 @@ void handle_status_check_request(int clsockfd) {
     char errfname[30];
     recv(clsockfd, request_id, 30, 0);
 
-    int status = request_status_map[string(request_id)];
-    if (request_status_map.find(string(request_id)) == request_status_map.end()) {
-        send_msg_to_client(clsockfd, "Invalid request id");
+    if (request_status_map.count(request_id) == 0) {
+        send_msg_to_client(clsockfd, "Invalid request id\n");
         return;
     }
-    cout << "reaching here\n";
+
+    int status = request_status_map[string(request_id)];
+    cout<<status<<endl;
 
     if (status == STATUS_COMPILER_ERROR){
-        sprintf(errfname, "./grader/err%s.txt", request_id);
-        send_msg_from_file_to_client(clsockfd, errfname);
+        // sprintf(errfname, "./grader/err%s.txt", request_id);
+        send_msg_to_client(clsockfd, "processing is done : Compiler Error\n");
     }  
     else if(status == STATUS_RUNTIME_ERROR) {
-        sprintf(errfname, "./grader/err%s.txt", request_id);
-        send_msg_from_file_to_client(clsockfd, errfname);
-    } else {
-        send_msg_to_client(clsockfd, "Ran successfully\n");
+        // sprintf(errfname, "./grader/err%s.txt", request_id);
+        send_msg_to_client(clsockfd, "processing is done : Runtime Error\n");
+    } 
+    else if(status == STATUS_ASSIGNED_THREAD) {
+        // sprintf(errfname, "./grader/err%s.txt", request_id);
+        send_msg_to_client(clsockfd, "processing is not done : \n");
+    } 
+    else if(status == STATUS_QUEUED) {
+        // sprintf(errfname, "./grader/err%s.txt", request_id);
+        send_msg_to_client(clsockfd, "processing is not done : \n");
+    } 
+    else {
+        send_msg_to_client(clsockfd, "processing is done : Ran successfully\n");
     }
 }
 
