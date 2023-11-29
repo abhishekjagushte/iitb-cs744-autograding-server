@@ -24,6 +24,7 @@ Node* create_node(int val) {
 
 void enqueue(Queue* q, int val) {
     Node *newnode = create_node(val);
+    q->size++;
     if (q->front == NULL) {
         q->front = newnode;
         q->rear = newnode;
@@ -40,6 +41,7 @@ int dequeue(Queue* q) {
     }
 
     int val = q->front->val;
+    q->size--;
     if (q->front == q->rear) {
         q->front = NULL;
         q->rear = NULL;

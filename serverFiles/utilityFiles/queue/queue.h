@@ -11,10 +11,10 @@ typedef struct Node Node;
 struct Queue {
     Node* front;
     Node* rear;
+    int size;
 };
 
 typedef struct Queue Queue;
-
 
 Queue* createQueue();
 void enqueue(Queue* q, int val);
