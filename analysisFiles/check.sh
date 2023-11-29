@@ -1,43 +1,16 @@
-if [ $# -ne 1 ]; then
-    echo "Usage <number of clients>"
-    exit
-fi
+./client new localhost 3000 programs/correctp.cpp $1
+# prog id
 
-plots_path=./analysisFiles/plots
+while true; do
+    sleep(5);
+    reqID=$(awk '
+        {
+            print $1;
+        }
+    ')
+    ./client status localhost 3000 $reqID $1
 
-mkdir -p grader/outputs
-rm -f outputs/*
+    var=$(grep "processing is done" $1.txt | wc -l)
 
-for (( i=1 ; i<=$1 ; i++ )); 
-do
-    ./client 127.0.0.1 3000 programs/correctp.cpp $2 $3 $i $4 > grader/outputs/op$i.txt &
+    if(( var )); then exit 0; fi
 done
-
-wait
-
-
-grep "Average" grader/outputs/*.txt | awk  -v nclients="$1" '
-    BEGIN{
-        sum=0
-        total=0
-        thru=0
-        succ=0
-        timeouts=0
-        errors=0
-    }
-    
-    {
-        sum=sum+($12*$14)
-        total=total+$14
-        thru=thru+$27
-        succ=succ+$2
-        timeouts=timeouts+$32
-        errors=errors+$37
-    }
-
-    END{
-        printf("Average time taken = %f ms. Throughput = %f and Successful = %d of %d | Number of clients = %d Timeout-rate = %d Error-rate = %d\n", sum/total, thru, succ, total, nclients, timeouts, errors)
-    }
-' >> $plots_path/results.txt
-
-

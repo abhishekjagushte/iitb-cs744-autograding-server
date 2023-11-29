@@ -24,6 +24,8 @@ pthread_cond_t qempty2 = PTHREAD_COND_INITIALIZER;
 const int STATUS_SUCCESSFUL = 0;
 const int STATUS_COMPILER_ERROR = 1;
 const int STATUS_RUNTIME_ERROR = 2;
+const int STATUS_ASSIGNED_THREAD = 3;
+const int STATUS_QUEUED = 4;
 
 map<string, int> request_status_map;
 
