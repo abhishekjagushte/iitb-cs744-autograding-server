@@ -91,13 +91,6 @@ void* compile_and_run() {
     }          
 }
 
-void *average_queue_size(void *arg) {
-    while (1) {
-        sleep(2);
-        printf("Client queue size: %d\n", cliQueue->size);
-    }
-}
-
 int main(int argc, char* argv[]) {
     char* location[] = {"gradingserver.c", "main", NULL};
     int sockfd, portno;
@@ -141,10 +134,6 @@ int main(int argc, char* argv[]) {
         if (pthread_create(&thread, NULL, compile_and_run, NULL) != 0)
             printf("Failed to create Thread\n");
 
-    pthread_t avg_queue_thread;
-    if(pthread_create(&avg_queue_thread, NULL, &average_queue_size, NULL) != 0) {
-        error_exit(location, "Error in creating average queue size thread\n", 1);
-    }
 
     while(1) {
         int clsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &cl_arr_len);
