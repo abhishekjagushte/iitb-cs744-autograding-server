@@ -1,6 +1,9 @@
+cat /dev/null > clientFiles/$1.txt
+
+start_time=$(date +%s.%N)
+
 ./client new localhost 3000 programs/comperr.cpp "$1"
-# prog id
-count=0
+
 while true; do
     # sleep 5;
     reqID=$(awk '{print $1}' "clientFiles/$1.txt")
@@ -10,6 +13,11 @@ while true; do
     var=$(grep "processing is done" "clientFiles/status$1.txt" | wc -l)
 
     if [ $var -gt 0 ]; then
-        exit 0
+        break
     fi
 done
+
+end_time=$(date +%s.%N)
+elapsed_time=$(echo "($end_time - $start_time) * 1000000" | bc)
+
+echo "Average Resp time: $elapsed_time us"
