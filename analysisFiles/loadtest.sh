@@ -1,15 +1,39 @@
-plots_path=./analysisFiles/plots
+if [ $# -ne 4 ]; then
+    echo "Usage <number of clients> <loop num> <sleep time> <timeout-secs>"
+    exit
+fi
 
-# mkdir -p grader/outputs
-# rm -f outputs/*
+gcc -o client gradingclient.c
+mkdir -p outputs
+rm -f outputs/*
 
-# result=$(time ./analysisFiles/check.sh 1 2>&1)
+for (( i=1 ; i<=$1 ; i++ )); 
+do
+    ./client 127.0.0.1 3000 correctp.cpp $2 $3 $i $4 > outputs/op$i.txt &
+done
 
-{ time ./test_client.sh 0.0.0.0 8080 studentCode.cpp 20 ; } 2>&1 | grep "real" | awk 'BEGIN {FS="\t"} {print $2}'
-
-# echo $result
+wait
 
 
-# >> $plots_path/results.txt
+grep "Average" outputs/*.txt | awk  -v nclients="$1" '
+    BEGIN{
+        sum=0
+        total=0
+        thru=0
+        succ=0
+        timeouts=0
+    }
+    
+    {
+        sum=sum+($12*$14)
+        total=total+$14
+        thru=thru+$27
+        succ=succ+$2
+        timeouts=timeouts+$31
+    }
 
+    END{
+        printf("Average time taken = %f ms. Throughput = %f and Successful = %d of %d | Number of clients = %d Timeouts = %d\n", sum/total, thru, succ, total, nclients, timeouts)
+    }
+' >> results.txt
 
