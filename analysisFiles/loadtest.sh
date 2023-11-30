@@ -25,11 +25,13 @@ wait
 end_time=$(date +%s.%N)
 
 elapsed_time=$(echo "($end_time - $start_time) * 1000000" | bc)
+
 throughput=$(echo "$end_time - $start_time" | bc)
 throughput=$(echo "scale=10; $1 / ($end_time - $start_time)" | bc)
 
-echo "$elapsed_time $throughput" >> $path/plots/results.txt
+# echo $1 $elapsed_time
 
+echo "$elapsed_time $throughput" >> $path/plots/results.txt
 
 rm $opPath/op*.txt
 
