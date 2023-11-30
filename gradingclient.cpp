@@ -87,7 +87,7 @@ void* submit(void* args) {
     args_r->status = 0;
 }
 
-int send_grading_requests(
+void send_grading_requests(
     int sockfd, char* fname, int prog_id
 ) {
     int submit_status = 0;
@@ -109,7 +109,7 @@ int send_grading_requests(
     close(sockfd);
 }
 
-int send_status_requests(
+void send_status_requests(
     int sockfd, char* reqID, int prog_id
 ) {
     char* location = "gradingclient.c - send_status_requests";
