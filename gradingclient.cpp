@@ -11,6 +11,8 @@
 #include <errno.h>
 #include <pthread.h>
 #include <chrono>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "serverFiles/utilityFiles/fileshare/fileshare.h"
 #include "serverFiles/utilityFiles/error/errors.h"
@@ -24,8 +26,22 @@ struct submit_args {
     int prog_id;
 };
 
-int create_socket_connection(struct sockaddr_in serv_addr) {
+int create_socket_connection(char* server_ip_arg, char* portno_arg) {
     char* location = "gradingclient.c - create_socket_connection";
+
+    char *server_ip;
+    server_ip = server_ip_arg;
+    int portno = atoi(portno_arg);
+
+    if (server_ip == NULL) {
+        error_exit(location, "No such host available", 1);
+    }
+
+    struct sockaddr_in serv_addr;
+    bzero((char *)&serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(portno);
+    inet_pton(AF_INET, server_ip, &serv_addr.sin_addr.s_addr);
 
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -72,11 +88,8 @@ void* submit(void* args) {
 }
 
 int send_grading_requests(
-    struct sockaddr_in serv_addr, char* fname, int prog_id
+    int sockfd, char* fname, int prog_id
 ) {
-    // total time taken for loop
-    int sockfd = create_socket_connection(serv_addr);
-
     int submit_status = 0;
     struct submit_args args = {sockfd, fname, submit_status, prog_id};
 
@@ -97,28 +110,15 @@ int send_grading_requests(
 }
 
 int send_status_requests(
-    struct sockaddr_in serv_addr, char* reqID, int prog_id
+    int sockfd, char* reqID, int prog_id
 ) {
-    int sockfd;
     char* location = "gradingclient.c - send_status_requests";
-
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
-    if (sockfd < 0) {
-        error_exit(location, "Error in creating a socket", 1);
-    }
-
-    if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-        error_exit(location, "Couldn't connect!", 1);
-    }
 
     send_reqType(sockfd, "status");
 
     send_reqID(sockfd, reqID);
 
     char* temp = receive_reqDetails(sockfd);
-
-    // printf("%s", temp);
 
     char write_cmd[100];
 
@@ -135,46 +135,21 @@ int main(int argc, char *argv[]) {
     char *fname;
     char *req_type;
     
-    if(argc == 6){
-        req_type = argv[1];
-        if(!strcmp(req_type, "new")){
-            if(argc != 6)
-                error_exit(location, "Usage: <new> <server-IP> <server-port> <file-name> <id>", 1);
-        }
-        else if(!strcmp(req_type, "status")){
-            if(argc != 6)
-                error_exit(location, "Usage: <status> <server-IP> <server-port> <requestID> <id>", 1);
-        }
-        else
-            error_exit(location, "Usage: <new|status> <server-IP> <server-port> <file-name|requestID> <id>", 1);
+    if(argc != 6){
+        error_exit(location, "Usage: <new|status> <server-IP> <server-port> <file-name|requestID> <id>", 1);
     }
-    else
-        error_exit(location, ">> Usage: <new|status> <server-IP> <server-port> <file-name|requestID> <id>", 1);
 
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
-
-    server = gethostbyname(argv[2]);
-    int portno = atoi(argv[3]);
+    req_type = argv[1];
     fname = argv[4];
     int prog_id = atoi(argv[5]);
-
-
-    if (server == NULL) {
-        error_exit(location, "No such host available", 1);
-    }
-
-    bzero((char *)&serv_addr, sizeof(serv_addr));
-
-    serv_addr.sin_port = htons(portno);
-    serv_addr.sin_family = AF_INET;
-
     int time_sum = 0;
     int succ = 0;
 
+    int sockfd = create_socket_connection(argv[2], argv[3]);
+
     if(!strcmp(req_type, "new"))
-        send_grading_requests(serv_addr, fname, prog_id);
+        send_grading_requests(sockfd, fname, prog_id);
     else{
-        send_status_requests(serv_addr, fname, prog_id);
+        send_status_requests(sockfd, fname, prog_id);
     }
 }
