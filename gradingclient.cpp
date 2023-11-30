@@ -89,6 +89,8 @@ int send_grading_requests(
 
     recv(sockfd, buff, 30, 0);
 
+    printf("%s\n", buff);
+
     write_request_ids_to_file(buff, prog_id);
 
     close(sockfd);
