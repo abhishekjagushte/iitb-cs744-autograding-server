@@ -1,39 +1,35 @@
-if [ $# -ne 4 ]; then
-    echo "Usage <number of clients> <loop num> <sleep time> <timeout-secs>"
+if [ $# -ne 1 ]; then
+    echo "Usage <number of clients>"
     exit
 fi
 
-gcc -o client gradingclient.c
-mkdir -p outputs
-rm -f outputs/*
+# make
+
+path="./analysisFiles"
+opPath="./analysisFiles/outputs"
+
+
+cat /dev/null > $path/results.txt
+
+
+start_time=$(date +%s.%N)
 
 for (( i=1 ; i<=$1 ; i++ )); 
 do
-    ./client 127.0.0.1 3000 correctp.cpp $2 $3 $i $4 > outputs/op$i.txt &
+    cat /dev/null > $opPath/op$i.txt
+    bash $path/check.sh $i > $opPath/op$i.txt &
 done
 
 wait
 
+end_time=$(date +%s.%N)
 
-grep "Average" outputs/*.txt | awk  -v nclients="$1" '
-    BEGIN{
-        sum=0
-        total=0
-        thru=0
-        succ=0
-        timeouts=0
-    }
-    
-    {
-        sum=sum+($12*$14)
-        total=total+$14
-        thru=thru+$27
-        succ=succ+$2
-        timeouts=timeouts+$31
-    }
+elapsed_time=$(echo "($end_time - $start_time) * 1000000" | bc)
+throughput=$(echo "$end_time - $start_time" | bc)
+throughput=$(echo "scale=10; $1 / ($end_time - $start_time)" | bc)
 
-    END{
-        printf("Average time taken = %f ms. Throughput = %f and Successful = %d of %d | Number of clients = %d Timeouts = %d\n", sum/total, thru, succ, total, nclients, timeouts)
-    }
-' >> results.txt
+echo "$elapsed_time $throughput" >> $path/plots/results.txt
+
+
+rm $opPath/op*.txt
 

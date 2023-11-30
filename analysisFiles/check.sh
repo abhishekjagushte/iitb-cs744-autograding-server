@@ -1,14 +1,12 @@
-path="./clientFiles"
+path="./analysisFiles/clientFiles"
 filename="$1.txt"
 
 cat /dev/null > $path/$filename
 
-start_time=$(date +%s.%N)
-
 ./client new localhost 3000 programs/comperr.cpp "$1"
 
 while true; do
-    sleep 5;
+    sleep 1;
 
     if [ ! -s "$path/$filename" ]; then
         # echo "The file is empty."
@@ -26,7 +24,4 @@ while true; do
     fi
 done
 
-end_time=$(date +%s.%N)
-elapsed_time=$(echo "($end_time - $start_time) * 1000000" | bc)
-
-echo "Average Resp time: $elapsed_time us"
+echo done

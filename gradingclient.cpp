@@ -59,7 +59,7 @@ int create_socket_connection(char* server_ip_arg, char* portno_arg) {
 void write_request_ids_to_file(char* request_id, int prog_id) {
     char write_cmd[100];
 
-    sprintf(write_cmd, "echo %s >> clientFiles/%d.txt", request_id, prog_id);
+    sprintf(write_cmd, "echo %s >> analysisFiles/clientFiles/%d.txt", request_id, prog_id);
     
     system(write_cmd);
 }
@@ -122,7 +122,7 @@ void send_status_requests(
 
     char write_cmd[100];
 
-    sprintf(write_cmd, "echo \"%s\" > clientFiles/status%d.txt", temp, prog_id);
+    sprintf(write_cmd, "echo \"%s\" > analysisFiles/clientFiles/status%d.txt", temp, prog_id);
     
     system(write_cmd);
 
