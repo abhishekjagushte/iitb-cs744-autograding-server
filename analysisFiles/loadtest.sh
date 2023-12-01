@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [ $# -ne 1 ]; then
-    echo "Usage <number of clients>"
+if [ $# -ne 3 ]; then
+    echo "loadtest.sh: Usage <number of clients> <host> <port>"
     exit
 fi
 
@@ -21,7 +21,7 @@ start_time=$(date +%s.%N)
 for (( i=1 ; i<=$1 ; i++ )); 
 do
     cat /dev/null > $opPath/op$i.txt
-    bash $path/check.sh $i > $opPath/op$i.txt &
+    bash $path/check.sh $i $2 $3 > $opPath/op$i.txt &
 done
 
 wait

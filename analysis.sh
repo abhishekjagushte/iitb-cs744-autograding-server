@@ -15,8 +15,8 @@ SIZE='
 120
 '
 
-if [ $# -ne 0 ]; then
-    echo "No arguments required."
+if [ $# -ne 2 ]; then
+    echo "analysis.sh: Usage: <host> <port>"
     exit
 fi
 
@@ -42,7 +42,7 @@ for i in ${SIZE}; do
     vmstat 1 > $plots_path/pref$i.txt &
     ./analysisFiles/moniter_threads.sh &
 
-    bash analysisFiles/loadtest.sh ${i} $1 $2 $3
+    bash analysisFiles/loadtest.sh ${i} $1 $2
     cat $plots_path/results.txt | tee >(awk -v cl=$i '{printf("%f %f\n", cl, $2)}' >> $plots_path/lab10/throughput.txt) >(awk -v cl=$i '{printf("%f %f\n", cl, $1)}' >> $plots_path/lab10/aat.txt)
 
     pkill -f './analysisFiles/moniter_threads.sh'

@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ $# -ne 3 ]; then
+    echo "check.sh: Usage <prog_id> <host> <port>"
+    exit
+fi
+
 mkdir -p analysisFiles/clientFiles
 
 path="./analysisFiles/clientFiles"
@@ -7,7 +12,7 @@ filename="$1.txt"
 
 cat /dev/null > $path/$filename
 
-./client new localhost 3000 programs/comperr.cpp "$1"
+./client new $2 $3 programs/comperr.cpp "$1"
 
 while true; do
     sleep 1;
