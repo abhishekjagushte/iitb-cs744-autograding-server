@@ -24,7 +24,7 @@ while true; do
 
     reqID=$(awk '{print $1}' "$path/$filename")
 
-    ./client status localhost 3000 "$reqID" "$1"
+    ./client status $2 $3 "$reqID" "$1"
 
     var=$(grep "processing is done" "$path/status$filename" | wc -l)
 
