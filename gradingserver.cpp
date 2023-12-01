@@ -54,7 +54,7 @@ void handle_status_check_request(int clsockfd) {
     // Ask the client for request id
 
     char request_id[30];
-    char errfname[30];
+    char errfname[100];
     recv(clsockfd, request_id, 30, 0);
 
     if (request_status_map.count(request_id) == 0) {
@@ -74,11 +74,11 @@ void handle_status_check_request(int clsockfd) {
     } 
     else if(status == STATUS_ASSIGNED_THREAD) {
         // sprintf(errfname, "./grader/err%s.txt", request_id);
-        send_msg_to_client(clsockfd, "processing is not done : \n");
+        send_msg_to_client(clsockfd, "processing is not done : Accepted and currently being processed.\n");
     } 
     else if(status == STATUS_QUEUED) {
-        // sprintf(errfname, "./grader/err%s.txt", request_id);
-        send_msg_to_client(clsockfd, "processing is not done : \n");
+        // sprintf(errfname, "processing is not done : Accepted and in the queue at position %d.\n", findPos(cliQueue, request_id));
+        send_msg_to_client(clsockfd, "processing is not done : Accepted and in the queue at position.\n");
     } 
     else {
         send_msg_to_client(clsockfd, "processing is done : Ran successfully\n");
@@ -102,7 +102,9 @@ void* compile_and_run(void* args) {
         
         ClientRequest req = dequeue(cliQueue);
         char* request_id = req.request_id;
-            
+
+        // request_status_map[request_id]=STATUS_ASSIGNED_THREAD;
+
         pthread_mutex_unlock(&qmutex2);
 
         sprintf(cppfname, "./grader/src%s.cpp", request_id);
@@ -119,18 +121,18 @@ void* compile_and_run(void* args) {
 
         if (status != 0) {
             // Compiler error
-            request_status_map.emplace(string(request_id), STATUS_COMPILER_ERROR);
+            request_status_map[request_id]=STATUS_COMPILER_ERROR;
         } else {
             // check runtime error
             int r_status = system(run_cmd);
             if (r_status != 0) {
                 // send_msg_from_file_to_client(clsockfd, errfname);
-                request_status_map.emplace(string(request_id), STATUS_RUNTIME_ERROR);
+                request_status_map[request_id]=STATUS_RUNTIME_ERROR;
             } else {
                 // if no runtime error, the output is saved in op.txt
                 int st = system(diff_cmd);
                 if (st==0) {
-                    request_status_map.emplace(string(request_id), STATUS_SUCCESSFUL);
+                    request_status_map[request_id]=STATUS_SUCCESSFUL;                    
                 }
             }
         }
@@ -165,6 +167,8 @@ void* file_add_in_queue(void* args) {
         
         enqueue(cliQueue, clsockfd, request_id);
         pthread_cond_signal(&qempty2);
+
+        // request_status_map[request_id]=STATUS_QUEUED;
             
         pthread_mutex_unlock(&qmutex2);
         

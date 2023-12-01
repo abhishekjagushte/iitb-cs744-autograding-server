@@ -15,7 +15,7 @@ int receivefile(int clsockfd, char* cppfname) {
 
     // receive the file size
     if (recv(clsockfd, &file_size_bytes, sizeof(file_size), 0) == -1) {
-        printf("Error in receving file size");
+        printf("Error in receving file size\n");
         return -1;
     }
     memcpy(&file_size, file_size_bytes, sizeof(file_size));
