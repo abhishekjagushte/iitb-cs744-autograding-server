@@ -172,6 +172,34 @@ void* file_add_in_queue(void* args) {
     }          
 }
 
+template <typename KeyType, typename ValueType>
+void saveMapToCSV(const std::unordered_map<KeyType, ValueType>& myMap, const std::string& filename) {
+    std::ofstream csvFile(filename, std::ofstream::out | std::ofstream::trunc);
+
+    if (!csvFile.is_open()) {
+        std::cerr << "Error opening the file." << std::endl;
+        return;
+    }
+
+    csvFile << "RequestID,Status" << std::endl;
+    for (const auto& pair : myMap) {
+        csvFile << pair.first << "," << pair.second << std::endl;
+    }
+
+    csvFile.close();
+
+    std::cout << "CSV file has been created successfully." << std::endl;
+}
+
+void* create_backup(void* args) {
+    while (1)
+    {
+        sleep(5);
+
+        saveMapToCSV(request_status_map, "serverFiles/server_backup.csv");
+    }             
+}
+
 int main(int argc, char* argv[]) {
     char* location = "gradingclient.c - main";
     int sockfd, portno;
@@ -219,16 +247,12 @@ int main(int argc, char* argv[]) {
             if (pthread_create(&thread[i], NULL, compile_and_run, NULL) != 0)
                 printf("Failed to create Thread\n");
         }
-        else if(i < thread_pool_size-3){
-            if (pthread_create(&thread[i], NULL, file_add_in_queue, NULL) != 0)
-                printf("Failed to create Thread\n");
-        }
-        else if(i == thread_pool_size-2){
+        else if(i < thread_pool_size-1){
             if (pthread_create(&thread[i], NULL, file_add_in_queue, NULL) != 0)
                 printf("Failed to create Thread\n");
         }
         else{
-            if (pthread_create(&thread[i], NULL, file_add_in_queue, NULL) != 0)
+            if (pthread_create(&thread[i], NULL, create_backup, NULL) != 0)
                 printf("Failed to create Thread\n");
         }
     
