@@ -2,8 +2,6 @@
 echo Analysing and Generating PNG!!
 echo
 
-# chmod +x analysisFiles/moniter_threads.sh
-
 plots_path=./analysisFiles/plots
 
 # Different Sizes of Cache
@@ -27,10 +25,6 @@ cat /dev/null > $plots_path/lab10/throughput.txt
 cat /dev/null > $plots_path/lab10/aat.txt
 cat /dev/null > $plots_path/lab10/threadsplot.txt
 cat /dev/null > $plots_path/results.txt
-# cat /dev/null > $plots_path/error_rate.txt
-# cat /dev/null > $plots_path/timeout_rate.txt
-# cat /dev/null > $plots_path/succ_rate.txt
-# cat /dev/null > $plots_path/req_rate.txt
 cat /dev/null > $plots_path/lab10/loadUti.txt
 
 
@@ -50,11 +44,6 @@ for i in ${SIZE}; do
 
     bash analysisFiles/loadtest.sh ${i} $1 $2 $3
     cat $plots_path/results.txt | tee >(awk -v cl=$i '{printf("%f %f\n", cl, $2)}' >> $plots_path/lab10/throughput.txt) >(awk -v cl=$i '{printf("%f %f\n", cl, $1)}' >> $plots_path/lab10/aat.txt)
-
-    # cat $plots_path/results.txt | awk '{printf("%d %d\n", $21, $24)}' >> $plots_path/timeout_rate.txt
-    # cat $plots_path/results.txt | awk '{printf("%d %d\n", $21, $27)}' >> $plots_path/error_rate.txt
-    # cat $plots_path/results.txt | awk '{printf("%d %d\n", $21, $9)}' >> $plots_path/succ_rate.txt
-    # cat $plots_path/results.txt | awk '{printf("%d %d\n", $21, $24 + $27 + $9)}' >> $plots_path/req_rate.txt
 
     pkill -f './analysisFiles/moniter_threads.sh'
     pkill -f 'vmstat 1'
@@ -83,7 +72,7 @@ threadsplot
 loadUti
 '
 
-mkdir $plots_path/lab10
+mkdir -p $plots_path/lab10
 
 for i in ${FILENAME}; do
     cat $plots_path/lab10/$i.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Clients vs $i" -X "Number of Clients" -Y "$i" -r 0.25 > $plots_path/lab10/$i.png
@@ -101,12 +90,12 @@ do
     set ylabel "$i"
     set grid
 
-    plot "$plots_path/$i.txt" using 1:2 with linespoints title "Response Time ver3" linecolor rgb "blue", \
+    plot "$plots_path/lab10/$i.txt" using 1:2 with linespoints title "Response Time ver3" linecolor rgb "blue", \
     "$file" using 1:2 with linespoints title "Response Time ver1" linecolor rgb "red"
 EOF
 done
 
-sleep 10
+sleep 5
 
 ./analysisFiles/del.sh
 
