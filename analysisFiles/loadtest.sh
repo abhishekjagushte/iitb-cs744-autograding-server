@@ -1,9 +1,13 @@
+#!/bin/bash
+
 if [ $# -ne 1 ]; then
     echo "Usage <number of clients>"
     exit
 fi
 
 # make
+
+mkdir -p analysisFiles/outputs
 
 path="./analysisFiles"
 opPath="./analysisFiles/outputs"

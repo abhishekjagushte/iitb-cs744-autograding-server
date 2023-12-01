@@ -1,3 +1,7 @@
+#!/bin/bash
+
+mkdir -p analysisFiles/clientFiles
+
 path="./analysisFiles/clientFiles"
 filename="$1.txt"
 
