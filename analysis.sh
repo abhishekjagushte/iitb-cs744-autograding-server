@@ -50,7 +50,7 @@ for i in ${SIZE}; do
     ./analysisFiles/moniter_threads.sh &
 
     bash analysisFiles/loadtest.sh ${i} $1 $2 $3
-    cat $plots_path/results.txt | tee >(awk -v cl=$i '{printf("%f %f\n", cl, $9)}' >> $plots_path/throughput.txt) >(awk -v cl=$i '{printf("%f %f\n", cl, $5)}' >> $plots_path/aat.txt)
+    cat $plots_path/results.txt | tee >(awk -v cl=$i '{printf("%f %f\n", cl, $9)}' >> $plots_path/throughput.txt) >(awk -v cl=$i '{printf("%f %f\n", cl, $5)}' >> $plots_path/aat.txt) >(awk -v cl=$i '{printf("%f %f\n", cl, $30)}' >> $plots_path/goodput.txt)
 
     cat $plots_path/results.txt | awk '{printf("%d %d\n", $21, $24)}' >> $plots_path/timeout_rate.txt
     cat $plots_path/results.txt | awk '{printf("%d %d\n", $21, $27)}' >> $plots_path/error_rate.txt
@@ -86,6 +86,7 @@ timeout_rate
 succ_rate
 req_rate
 loadUti
+goodput
 '
 
 for i in ${FILENAME}; do

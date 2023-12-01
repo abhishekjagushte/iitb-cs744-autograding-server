@@ -121,7 +121,7 @@ int send_grading_requests(
     int t_diff = (total_time_end.tv_sec*1000 + total_time_end.tv_usec/1000) - (total_time_start.tv_sec*1000 + total_time_start.tv_usec/1000);
 
     float average = (float) time_sum/icount;
-    printf("Successful %d of %d. Average time taken in prog %d = %f with %d loop iterations. Total time taken for loop = %d ms. Throughput = %f Rate of timeouts = %f Rate of errors = %f Goodput = %f\n", succ, icount, prog_id, average, icount, t_diff, (float) (icount*1000)/t_diff, (float) (timeouts*1000)/t_diff, (float) (errors*1000)/t_diff, (succ*1000)/t_diff);
+    printf("Successful %d of %d. Average time taken in prog %d = %f with %d loop iterations. Total time taken for loop = %d ms. Throughput = %f Rate of timeouts = %f Rate of errors = %f Goodput = %f \n", succ, icount, prog_id, average, icount, t_diff, (float) (icount*1000)/t_diff, (float) (timeouts*1000)/t_diff, (float) (errors*1000)/t_diff, (float) (succ*1000)/t_diff);
 
 }
 

@@ -24,19 +24,21 @@ grep "Average" grader/outputs/*.txt | awk  -v nclients="$1" '
         succ=0
         timeouts=0
         errors=0
+        goodput=0
     }
     
     {
         sum=sum+($12*$14)
         total=total+$14
         thru=thru+$27
+        goodput=goodput+$40
         succ=succ+$2
         timeouts=timeouts+$32
         errors=errors+$37
     }
 
     END{
-        printf("Average time taken = %f ms. Throughput = %f and Successful = %d of %d | Number of clients = %d Timeout-rate = %d Error-rate = %d\n", sum/total, thru, succ, total, nclients, timeouts, errors)
+        printf("Average time taken = %f ms. Throughput = %f and Successful = %d of %d | Number of clients = %d Timeout-rate = %d Error-rate = %d Goodput = %f\n", sum/total, thru, succ, total, nclients, timeouts, errors, goodput)
     }
 ' >> $plots_path/results.txt
 
